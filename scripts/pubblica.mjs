@@ -27,14 +27,15 @@ const cartella = mkdtempSync(join(tmpdir(), 'pds-pages-'));
 try {
   git('worktree', 'add', '--detach', cartella, '-q');
   const nel = (...argomenti) => execFileSync('git', ['-C', cartella, ...argomenti], { stdio: 'inherit' });
-  nel('checkout', '--orphan', RAMO, '-q');
+  // ramo locale usa e getta: il ramo pubblicato si aggiorna solo lato remoto
+  nel('checkout', '--orphan', 'pubblicazione-in-corso', '-q');
   nel('rm', '-rf', '.', '-q');
   cpSync('dist', cartella, { recursive: true });
   // senza .nojekyll GitHub Pages ignora i file che iniziano con "_"
   writeFileSync(join(cartella, '.nojekyll'), '');
   nel('add', '-A');
   nel('commit', '-q', '-m', `deploy: ${gitMuto('rev-parse', '--short', 'HEAD')}`);
-  nel('push', '-q', '--force', 'origin', RAMO);
+  nel('push', '-q', '--force', 'origin', `HEAD:${RAMO}`);
   console.log('Pubblicato: https://pier-200.github.io/GestionalePdS/');
 } finally {
   git('worktree', 'remove', cartella, '--force');
