@@ -25,11 +25,12 @@ const { build } = await import('vite');
 await build();
 
 const cartella = mkdtempSync(join(tmpdir(), 'pds-pages-'));
+// ramo locale usa e getta, con nome univoco per non inciampare in esecuzioni interrotte
+const ramoTemporaneo = `pubblicazione-${Date.now()}`;
 try {
   git('worktree', 'add', '--detach', cartella, '-q');
   const nel = (...argomenti) => execFileSync('git', ['-C', cartella, ...argomenti], { stdio: 'inherit' });
-  // ramo locale usa e getta: il ramo pubblicato si aggiorna solo lato remoto
-  nel('checkout', '--orphan', 'pubblicazione-in-corso', '-q');
+  nel('checkout', '--orphan', ramoTemporaneo, '-q');
   nel('rm', '-rf', '.', '-q');
   cpSync('dist', cartella, { recursive: true });
   // senza .nojekyll GitHub Pages ignora i file che iniziano con "_"
@@ -41,4 +42,9 @@ try {
 } finally {
   git('worktree', 'remove', cartella, '--force');
   rmSync(cartella, { recursive: true, force: true });
+  try {
+    execFileSync('git', ['branch', '-D', ramoTemporaneo, '-q'], { stdio: 'ignore' });
+  } catch {
+    /* il ramo temporaneo non è mai stato creato */
+  }
 }
