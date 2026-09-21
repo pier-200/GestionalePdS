@@ -1,0 +1,7 @@
+{
+  "nomeUfficio": "",
+  "sogliaScadenzaGiorni": 30,
+  "backend": {
+    "tipo": "demo"
+  }
+}
