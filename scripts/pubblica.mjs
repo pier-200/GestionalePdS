@@ -21,7 +21,8 @@ if (gitMuto('status', '--porcelain')) {
 }
 
 console.log('Compilazione…');
-execFileSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'build'], { stdio: 'inherit' });
+const { build } = await import('vite');
+await build();
 
 const cartella = mkdtempSync(join(tmpdir(), 'pds-pages-'));
 try {
