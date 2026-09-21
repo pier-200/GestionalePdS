@@ -58,6 +58,6 @@ src/backend/       archivi dati: demo, github (API Git + portachiavi cifrato), s
 src/ui/            interfaccia (React + Mantine)
 src/esportazione/  export Excel e CSV, con i grafici nativi del pacchetto .xlsx
 supabase/          schema SQL (RLS, trigger, funzioni) ed Edge Function "gestione-utenti"
-.github/workflows/ pubblicazione su Pages, installazione Supabase, mantenimento attivo di Supabase
+.github/workflows-da-attivare/  pubblicazione su Pages, installazione Supabase, keep-alive (vedi LEGGIMI.md)
 tests/             test unitari, SQL ed end-to-end, emulatori di GitHub e Supabase
 ```

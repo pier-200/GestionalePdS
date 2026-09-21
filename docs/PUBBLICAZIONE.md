@@ -175,8 +175,11 @@ poi avviare una volta **Actions → "Supabase – mantieni attivo" → Run workf
 | File | Scopo |
 |---|---|
 | `public/config.json` | archivio dati usato, nome dell'ufficio, soglia predefinita degli avvisi |
-| `.github/workflows/pubblica.yml` | compilazione, test e pubblicazione su GitHub Pages |
-| `.github/workflows/supabase-installa.yml` | installazione di schema e funzione su Supabase (manuale) |
-| `.github/workflows/supabase-attivo.yml` | mantiene attivo il progetto Supabase gratuito |
+| `.github/workflows-da-attivare/pubblica.yml` | compilazione, test e pubblicazione su GitHub Pages |
+| `.github/workflows-da-attivare/supabase-installa.yml` | installazione di schema e funzione su Supabase (manuale) |
+| `.github/workflows-da-attivare/supabase-attivo.yml` | mantiene attivo il progetto Supabase gratuito |
 | `supabase/migrations/…sql` | schema del database, sicurezza e funzioni |
 | `supabase/functions/gestione-utenti/index.ts` | creazione, reimpostazione password ed eliminazione utenti |
+
+> I workflow sono in `.github/workflows-da-attivare/` e vanno spostati in `.github/workflows/` per entrare in funzione: vedi `LEGGIMI.md` in quella cartella.
+
