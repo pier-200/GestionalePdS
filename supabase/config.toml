@@ -1,0 +1,7 @@
+# Configurazione minima per la Supabase CLI (usata dal workflow GitHub Actions
+# "Supabase – pubblica schema e funzione"). project_id viene passato dal workflow.
+project_id = "gestionale-pds"
+
+[functions.gestione-utenti]
+# L'autenticazione del chiamante è verificata dentro la funzione.
+verify_jwt = false

@@ -1,0 +1,224 @@
+:root {
+  --pds-piano: #f3f5f9;
+  --pds-superficie: #ffffff;
+  --pds-inchiostro-2: #475569;
+  --pds-muto: #64748b;
+  --pds-griglia: #e2e8f0;
+  --pds-base-asse: #cbd5e1;
+  --pds-critico: #dc2626;
+  --pds-attenzione: #d97706;
+  --pds-buono: #16a34a;
+  --pds-riga-scaduto: rgba(220, 38, 38, 0.07);
+  --pds-riga-in-scadenza: rgba(217, 119, 6, 0.11);
+  --pds-traccia-meter: #e2e8f0;
+  --pds-riempimento-meter: #2563eb;
+  --pds-riempimento-meter-2: #93c5fd;
+}
+
+[data-mantine-color-scheme='dark'] {
+  --pds-piano: #060b14;
+  --pds-superficie: #0f172a;
+  --pds-inchiostro-2: #cbd5e1;
+  --pds-muto: #94a3b8;
+  --pds-griglia: #1e293b;
+  --pds-base-asse: #334155;
+  --pds-riga-scaduto: rgba(220, 38, 38, 0.17);
+  --pds-riga-in-scadenza: rgba(217, 119, 6, 0.14);
+  --pds-traccia-meter: #1e293b;
+  --pds-riempimento-meter: #3b82f6;
+  --pds-riempimento-meter-2: #1e40af;
+}
+
+html,
+body {
+  background: var(--pds-piano);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.riga-cliccabile {
+  cursor: pointer;
+}
+
+.riga-cliccabile:focus-visible {
+  outline: 2px solid var(--mantine-color-pds-filled);
+  outline-offset: -2px;
+}
+
+.riga-scaduto > td {
+  background: var(--pds-riga-scaduto);
+}
+
+.riga-scaduto > td:first-of-type {
+  box-shadow: inset 3px 0 0 var(--pds-critico);
+}
+
+.riga-in-scadenza > td {
+  background: var(--pds-riga-in-scadenza);
+}
+
+.riga-in-scadenza > td:first-of-type {
+  box-shadow: inset 3px 0 0 var(--pds-attenzione);
+}
+
+.card-scaduto {
+  box-shadow: inset 4px 0 0 var(--pds-critico);
+  background: var(--pds-riga-scaduto);
+}
+
+.card-in-scadenza {
+  box-shadow: inset 4px 0 0 var(--pds-attenzione);
+  background: var(--pds-riga-in-scadenza);
+}
+
+.riga-eliminata > td {
+  opacity: 0.75;
+}
+
+.meter {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--pds-traccia-meter);
+  overflow: hidden;
+}
+
+.meter > .meter-riempimento {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 4px;
+  background: var(--pds-riempimento-meter);
+}
+
+.meter.meter-oltre > .meter-riempimento {
+  background: var(--pds-critico);
+}
+
+/* Barra a due colori: la quota chiara è il trasmesso, quella scura lo stipulato. */
+.meter > .meter-riempimento-2 {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 4px;
+  background: var(--pds-riempimento-meter-2);
+}
+
+.meter.meter-oltre > .meter-riempimento-2 {
+  background: var(--pds-attenzione);
+}
+
+.etichetta-campo {
+  color: var(--pds-muto);
+  font-size: var(--mantine-font-size-xs);
+  text-transform: none;
+  line-height: 1.3;
+}
+
+.valore-campo {
+  font-size: var(--mantine-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.th-ordinabile {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.th-ordinabile:hover {
+  color: var(--mantine-color-pds-filled);
+}
+
+.testo-pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------------------
+   Pagine pubbliche (accesso, primo avvio, diagnostica): sfondo blu sfumato
+   con due aloni chiari e scheda bianca al centro, come nel Generatore Esami.
+   -------------------------------------------------------------------------- */
+
+.pagina-pubblica {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 28px 16px 24px;
+  background-color: #1d4ed8;
+  background-image:
+    radial-gradient(circle at 12% 16%, rgba(255, 255, 255, 0.1) 0 190px, rgba(255, 255, 255, 0) 191px),
+    radial-gradient(circle at 90% 88%, rgba(255, 255, 255, 0.08) 0 260px, rgba(255, 255, 255, 0) 261px),
+    linear-gradient(155deg, #1e3a8a 0%, #2563eb 42%, #1d4ed8 68%, #0ea5e9 100%);
+}
+
+[data-mantine-color-scheme='dark'] .pagina-pubblica {
+  background-color: #0b1220;
+  background-image:
+    radial-gradient(circle at 12% 16%, rgba(255, 255, 255, 0.06) 0 190px, rgba(255, 255, 255, 0) 191px),
+    radial-gradient(circle at 90% 88%, rgba(255, 255, 255, 0.05) 0 260px, rgba(255, 255, 255, 0) 261px),
+    linear-gradient(155deg, #0b1220 0%, #1e3a8a 45%, #1d4ed8 78%, #0f172a 100%);
+}
+
+.pagina-pubblica-corpo {
+  width: 100%;
+  animation: pds-entra 0.28s ease-out;
+}
+
+@keyframes pds-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pagina-pubblica-corpo {
+    animation: none;
+  }
+}
+
+.scheda-accesso {
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.08),
+    0 18px 42px rgba(15, 23, 42, 0.22);
+}
+
+.marchio-tessera {
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: linear-gradient(140deg, #3b82f6 0%, #2563eb 55%, #1d4ed8 100%);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+
+.piede-pubblico {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: var(--mantine-font-size-xs);
+  text-align: center;
+  max-width: 560px;
+}
+
+.piede-pubblico a {
+  color: #ffffff;
+}
+
+@media print {
+  .mantine-AppShell-navbar,
+  .mantine-AppShell-header,
+  .no-stampa {
+    display: none !important;
+  }
+  .mantine-AppShell-main {
+    padding: 0 !important;
+  }
+}

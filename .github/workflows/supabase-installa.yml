@@ -1,0 +1,39 @@
+# Solo per il backend Supabase: applica lo schema del database e pubblica la Edge Function
+# "gestione-utenti" direttamente da GitHub, senza installare nulla sul proprio computer.
+# Da avviare manualmente (Actions → "Supabase – installa o aggiorna" → Run workflow).
+#
+# Secrets richiesti (Settings → Secrets and variables → Actions → Secrets):
+#   SUPABASE_ACCESS_TOKEN   token personale creato su https://supabase.com/dashboard/account/tokens
+#   SUPABASE_DB_PASSWORD    password del database scelta alla creazione del progetto
+# Variabile richiesta (Variables):
+#   SUPABASE_PROJECT_REF    identificativo del progetto (la parte iniziale dell'URL: abcdefghijkl)
+name: Supabase – installa o aggiorna
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  installa:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: supabase/setup-cli@v3
+        with:
+          version: latest
+
+      - name: Collegamento al progetto
+        run: supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Schema del database (tabelle, sicurezza, funzioni)
+        run: supabase db push --include-all --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Edge Function per la gestione degli utenti
+        run: supabase functions deploy gestione-utenti --project-ref "$PROJECT_REF" --no-verify-jwt --use-api

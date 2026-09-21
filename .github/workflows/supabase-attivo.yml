@@ -1,0 +1,59 @@
+# Solo per il backend Supabase (piano gratuito).
+#
+# I progetti Supabase gratuiti vengono sospesi dopo circa una settimana senza attività.
+# Questo job, eseguito da GitHub due volte a settimana, interroga il database così il
+# gestionale resta sempre disponibile anche se nessuno lo usa per un periodo.
+# GitHub disattiva i job pianificati nei repository senza attività da 60 giorni:
+# per evitarlo il job aggiorna periodicamente il file .github/attivita.txt.
+#
+# Configurazione (Settings → Secrets and variables → Actions → Variables):
+#   SUPABASE_URL             es. https://abcdefghijkl.supabase.co
+#   SUPABASE_CHIAVE_PUBBLICA la chiave pubblica (publishable/anon) del progetto
+# Se le variabili non sono impostate il job termina senza fare nulla.
+name: Supabase – mantieni attivo
+
+on:
+  schedule:
+    - cron: '17 6 * * 1,4'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Interroga il database
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          CHIAVE: ${{ vars.SUPABASE_CHIAVE_PUBBLICA }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$CHIAVE" ]; then
+            echo "Variabili SUPABASE_URL e SUPABASE_CHIAVE_PUBBLICA non impostate: nulla da fare."
+            exit 0
+          fi
+          risposta=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/ping" \
+            -H "apikey: $CHIAVE" -H "Content-Type: application/json" -d '{}')
+          echo "Risposta: $risposta"
+
+  mantieni-repository-attivo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - name: Aggiorna il file di attività se l'ultimo commit ha più di 40 giorni
+        run: |
+          ultimo=$(git log -1 --format=%ct)
+          adesso=$(date +%s)
+          giorni=$(( (adesso - ultimo) / 86400 ))
+          echo "Giorni dall'ultimo commit: $giorni"
+          if [ "$giorni" -ge 40 ]; then
+            date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/attivita.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/attivita.txt
+            git commit -m "Attività periodica per mantenere attivi i job pianificati"
+            git push
+          fi
