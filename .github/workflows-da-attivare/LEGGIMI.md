@@ -21,6 +21,11 @@ git commit -m "ci: attiva i workflow di GitHub Actions"
 git push
 ```
 
-Per la pubblicazione su GitHub Pages serve anche che il repository sia pubblico
-(oppure un piano GitHub che includa Pages sui repository privati) e che in
-**Settings → Pages** la sorgente sia impostata su **GitHub Actions**.
+## Situazione attuale
+
+Il sito è già online su **https://pier-200.github.io/GestionalePdS/**, servito dal ramo
+`gh-pages`: lo aggiorna `npm run pubblica`, che compila e sostituisce il contenuto del ramo.
+
+Attivando `pubblica.yml` la pubblicazione diventa automatica a ogni push su `main`; in quel caso
+in **Settings → Pages** la sorgente va impostata su **GitHub Actions** (al posto del ramo
+`gh-pages`) e `npm run pubblica` non serve più.

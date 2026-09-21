@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "pubblica": "node scripts/pubblica.mjs"
   },
   "dependencies": {
     "@mantine/core": "^9.6.1",

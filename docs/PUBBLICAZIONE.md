@@ -182,4 +182,5 @@ poi avviare una volta **Actions → "Supabase – mantieni attivo" → Run workf
 | `supabase/functions/gestione-utenti/index.ts` | creazione, reimpostazione password ed eliminazione utenti |
 
 > I workflow sono in `.github/workflows-da-attivare/` e vanno spostati in `.github/workflows/` per entrare in funzione: vedi `LEGGIMI.md` in quella cartella.
+> Nel frattempo il sito è online su <https://pier-200.github.io/GestionalePdS/> (ramo `gh-pages`) e si aggiorna con `npm run pubblica`.
 
