@@ -1,12 +1,12 @@
 import { Anchor, Badge, Card, Group, NumberInput, SegmentedControl, Stack, Text, ThemeIcon, Title } from '@mantine/core';
 import { IconAlertTriangle, IconCircleCheck, IconClockExclamation } from '@tabler/icons-react';
 import { useMemo, type ReactNode } from 'react';
-import type { PdsVista } from '../../domain/calcoli';
+import { etichettaCapitolo, type PdsVista } from '../../domain/calcoli';
 import { formattaPercentuale } from '../../domain/importi';
 import { stipulaAvvenuta } from '../../domain/stato';
 import { useDerivati } from '../../stato/derivati';
 import { useApp } from '../../stato/store';
-import { BadgeStato, DataConScadenza, Importo, IntestazionePagina } from '../componenti/base';
+import { BadgeStato, DataConScadenza, Importo, IntestazionePagina, NomeCapitolo } from '../componenti/base';
 import { Tabella, type Colonna } from '../componenti/Tabella';
 import { href, naviga } from '../router';
 import { SchedaPds } from './ElencoPds';
@@ -27,8 +27,8 @@ const colonne: Colonna<PdsVista>[] = [
   {
     chiave: 'capitolo',
     titolo: 'Capitolo',
-    ordina: (v) => v.capitolo?.codice,
-    render: (v) => <Text fz="sm">{v.capitolo ? v.capitolo.codice : '—'}</Text>,
+    ordina: (v) => (v.capitolo ? etichettaCapitolo(v.capitolo, false) : null),
+    render: (v) => (v.capitolo ? <NomeCapitolo capitolo={v.capitolo} /> : <Text fz="sm">—</Text>),
   },
   { chiave: 'ditta', titolo: 'Ditta', ordina: (v) => v.pds.ditta, render: (v) => <Text fz="sm">{v.pds.ditta ?? '—'}</Text> },
   { chiave: 'dec', titolo: 'Collaboratore/DEC', ordina: (v) => v.pds.dec, render: (v) => <Text fz="sm">{v.pds.dec ?? '—'}</Text> },

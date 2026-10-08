@@ -1,7 +1,8 @@
-import { numeroPds } from '../domain/calcoli';
+import { elencoIdv, etichettaCapitolo, numeroPds } from '../domain/calcoli';
 import type { Comando, DatiPds, FileAllegato, RisultatoComando } from '../domain/comandi';
 import { isDataISO } from '../domain/date';
 import { ErroreApp } from '../domain/errori';
+import { sommaCentesimi } from '../domain/importi';
 import { CAMPI_DATI_PDS, isAdmin, puo } from '../domain/permessi';
 import { differenze, etichettaCampo, istantanea, valoriUguali } from '../domain/registro';
 import type {
@@ -11,6 +12,7 @@ import type {
   Capitolo,
   DatiCondivisi,
   EntitaRegistro,
+  FondoIdv,
   ID,
   Istante,
   ModificaCampo,
@@ -37,8 +39,7 @@ import type { DatiUtente } from '../domain/comandi';
 /**
  * Motore locale: applica un comando ai dati condivisi in modo puro (senza I/O),
  * verificando permessi, validazioni, conflitti e producendo le voci di registro.
- * È usato dai backend "demo" e "GitHub"; il backend Supabase applica le stesse
- * regole lato database.
+ * È usato dai backend "demo" e "GitHub".
  */
 
 export interface ContestoComando {
@@ -64,7 +65,7 @@ export interface EsitoMotore {
   risultato: RisultatoComando;
 }
 
-const CAMPI_CAPITOLO = ['esercizio', 'codice', 'descrizione', 'finanziato', 'sforamento_ignorato', 'sforamento_note'] as const;
+const CAMPI_CAPITOLO = ['esercizio', 'codice', 'decreto', 'descrizione', 'finanziato', 'sforamento_ignorato', 'sforamento_note'] as const;
 /** Campi del capitolo riservati all'amministratore (autorizzazione del superamento del finanziato). */
 const CAMPI_CAPITOLO_ADMIN = ['sforamento_ignorato', 'sforamento_note'] as const;
 const CAMPI_PAGAMENTO = ['data', 'importo', 'riferimento', 'note'] as const;
@@ -75,8 +76,12 @@ const CAMPI_ELIMINAZIONE = ['eliminato_at', 'eliminato_da'] as const;
 const CAMPI_ACCORDO = ['numero', 'oggetto', 'ditta', 'dec', 'protocollo_stipula', 'data_stipula', 'durata_giorni', 'importo', 'note'] as const;
 const CAMPI_ATTO = ['numero', 'oggetto', 'protocollo_stipula', 'data_stipula', 'durata_giorni', 'valore', 'note'] as const;
 
-export function riferimentoCapitolo(c: Pick<Capitolo, 'codice' | 'esercizio'>): string {
-  return `${c.codice} (${c.esercizio})`;
+export function riferimentoCapitolo(c: Pick<Capitolo, 'codice' | 'esercizio' | 'decreto'>): string {
+  return etichettaCapitolo(c);
+}
+
+function totaleIdv(c: Pick<Capitolo, 'idv'>): number {
+  return sommaCentesimi((c.idv ?? []).map((f) => f.assegnato));
 }
 
 export function riferimentoAccordo(a: Pick<AccordoQuadro, 'numero'>): string {
@@ -187,6 +192,18 @@ class Esecuzione {
     }
   }
 
+  /**
+   * Gli IDV di un PdS devono esistere sul suo capitolo (li porta l'allineamento
+   * SIEFIN): se i fondi non sono ancora assegnati il PdS si inserisce senza IDV.
+   */
+  verificaIdv(p: Pick<Pds, 'idv'>, capitolo: Capitolo) {
+    const presenti = new Set((capitolo.idv ?? []).map((f) => f.idv));
+    const assenti = elencoIdv(p).filter((i) => !presenti.has(i));
+    if (assenti.length === 0) return;
+    const messaggio = `IDV ${assenti.join(', ')} non present${assenti.length === 1 ? 'e' : 'i'} sul capitolo ${etichettaCapitolo(capitolo, false)}: eseguire l'allineamento SIEFIN oppure lasciare il PdS senza IDV.`;
+    throw new ErroreApp('VALIDAZIONE', messaggio, { idv: messaggio });
+  }
+
   pagamento(id: ID): Pagamento {
     const p = this.dati.pagamenti.find((x) => x.id === id);
     if (!p) throw new ErroreApp('NON_TROVATO', 'Pagamento non trovato (potrebbe essere stato eliminato).');
@@ -253,9 +270,9 @@ function esegui(x: Esecuzione, c: Comando): RisultatoComando {
       x.richiedi('capitoli', undefined, 'gestire i capitoli di spesa');
       const d = validaDatiCapitolo(c.dati) as Required<ReturnType<typeof validaDatiCapitolo>>;
       if (d.sforamento_ignorato) x.richiediAdmin();
-      const chiave = chiaveCapitolo(d.esercizio, d.codice);
-      if (x.dati.capitoli.some((k) => chiaveCapitolo(k.esercizio, k.codice) === chiave)) {
-        throw new ErroreApp('DUPLICATO', `Il capitolo ${d.codice} esiste già per l'esercizio ${d.esercizio}.`);
+      const chiave = chiaveCapitolo(d);
+      if (x.dati.capitoli.some((k) => chiaveCapitolo(k) === chiave)) {
+        throw new ErroreApp('DUPLICATO', `Il capitolo ${etichettaCapitolo(d, false)} esiste già per l'esercizio ${d.esercizio}.`);
       }
       const nuovo: Capitolo = { id: x.ctx.nuovoId(), ...d, ...x.tracciaNuovo() };
       x.dati = { ...x.dati, capitoli: [...x.dati.capitoli, nuovo] };
@@ -273,10 +290,10 @@ function esegui(x: Esecuzione, c: Comando): RisultatoComando {
       if (Object.keys(diff).length === 0) return { id: corrente.id };
       // l'autorizzazione al superamento del finanziato la concede solo l'amministratore
       if (CAMPI_CAPITOLO_ADMIN.some((k) => diff[k])) x.richiediAdmin();
-      if (diff.esercizio || diff.codice) {
-        const chiave = chiaveCapitolo(aggiornato.esercizio, aggiornato.codice);
-        if (x.dati.capitoli.some((k) => k.id !== corrente.id && chiaveCapitolo(k.esercizio, k.codice) === chiave)) {
-          throw new ErroreApp('DUPLICATO', `Il capitolo ${aggiornato.codice} esiste già per l'esercizio ${aggiornato.esercizio}.`);
+      if (diff.esercizio || diff.codice || diff.decreto) {
+        const chiave = chiaveCapitolo(aggiornato);
+        if (x.dati.capitoli.some((k) => k.id !== corrente.id && chiaveCapitolo(k) === chiave)) {
+          throw new ErroreApp('DUPLICATO', `Il capitolo ${etichettaCapitolo(aggiornato, false)} esiste già per l'esercizio ${aggiornato.esercizio}.`);
         }
       }
       if (diff.esercizio && x.dati.pds.some((p) => p.capitolo_id === corrente.id)) {
@@ -309,16 +326,18 @@ function esegui(x: Esecuzione, c: Comando): RisultatoComando {
         throw new ErroreApp('VALIDAZIONE', "L'esercizio di destinazione deve essere diverso da quello di origine.");
       }
       validaDatiCapitolo({ esercizio: c.esercizioDestinazione }, true);
-      const esistenti = new Set(x.dati.capitoli.map((k) => chiaveCapitolo(k.esercizio, k.codice)));
+      const esistenti = new Set(x.dati.capitoli.map(chiaveCapitolo));
       const origine = x.dati.capitoli.filter((k) => k.esercizio === c.esercizioOrigine);
       const nuovi: Capitolo[] = [];
       for (const k of origine) {
-        if (esistenti.has(chiaveCapitolo(c.esercizioDestinazione, k.codice))) continue;
+        if (esistenti.has(chiaveCapitolo({ ...k, esercizio: c.esercizioDestinazione }))) continue;
         nuovi.push({
           id: x.ctx.nuovoId(),
           esercizio: c.esercizioDestinazione,
           codice: k.codice,
+          decreto: k.decreto ?? '',
           descrizione: k.descrizione,
+          // gli IDV non si copiano: nel nuovo esercizio li porta l'allineamento SIEFIN
           finanziato: c.copiaImporti ? k.finanziato : 0,
           sforamento_ignorato: false,
           sforamento_note: '',
@@ -330,6 +349,59 @@ function esegui(x: Esecuzione, c: Comando): RisultatoComando {
         x.registra('capitolo', n.id, null, 'creazione', riferimentoCapitolo(n), istantanea(n, CAMPI_CAPITOLO, true));
       }
       return { conteggio: nuovi.length };
+    }
+
+    case 'capitoli.allinea': {
+      x.richiedi('capitoli', undefined, 'gestire i capitoli di spesa');
+      validaDatiCapitolo({ esercizio: c.esercizio }, true);
+      if (c.righe.length === 0) throw new ErroreApp('VALIDAZIONE', "L'export SIEFIN non contiene alcun IDV.");
+      const gruppi = new Map<string, { codice: string; decreto: string; idv: FondoIdv[] }>();
+      const codiciIdv = new Set<string>();
+      for (const { codice, decreto, ...fondo } of c.righe) {
+        if (!fondo.idv || codiciIdv.has(fondo.idv) || !Number.isInteger(fondo.assegnato)) {
+          throw new ErroreApp('VALIDAZIONE', `Export SIEFIN: IDV "${fondo.idv}" mancante, ripetuto o con importo non valido.`);
+        }
+        codiciIdv.add(fondo.idv);
+        const chiave = chiaveCapitolo({ esercizio: c.esercizio, codice, decreto });
+        const gruppo = gruppi.get(chiave);
+        if (gruppo) gruppo.idv.push(fondo);
+        else gruppi.set(chiave, { ...(validaDatiCapitolo({ codice, decreto }, true) as { codice: string; decreto: string }), idv: [fondo] });
+      }
+      let conteggio = 0;
+      const capitoli = x.dati.capitoli.map((k) => {
+        if (k.esercizio !== c.esercizio) return k;
+        const chiave = chiaveCapitolo(k);
+        const gruppo = gruppi.get(chiave);
+        gruppi.delete(chiave);
+        // gli IDV dell'export sostituiscono quelli del capitolo; un IDV passato a un
+        // altro capitolo non deve restare anche su quello di provenienza
+        const idv = gruppo ? gruppo.idv : (k.idv ?? []).filter((f) => !codiciIdv.has(f.idv));
+        if (valoriUguali(idv, k.idv ?? [])) return k;
+        const finale: Capitolo = { ...k, idv, ...x.tracciaModifica() };
+        x.registra('capitolo', k.id, null, 'modifica', riferimentoCapitolo(finale), { idv: { da: totaleIdv(k), a: totaleIdv(finale) } });
+        conteggio++;
+        return finale;
+      });
+      for (const g of gruppi.values()) {
+        const nuovo: Capitolo = {
+          id: x.ctx.nuovoId(),
+          esercizio: c.esercizio,
+          ...g,
+          descrizione: '',
+          finanziato: 0,
+          sforamento_ignorato: false,
+          sforamento_note: '',
+          ...x.tracciaNuovo(),
+        };
+        capitoli.push(nuovo);
+        x.registra('capitolo', nuovo.id, null, 'creazione', riferimentoCapitolo(nuovo), {
+          ...istantanea(nuovo, CAMPI_CAPITOLO, true),
+          idv: { da: null, a: totaleIdv(nuovo) },
+        });
+        conteggio++;
+      }
+      x.dati = { ...x.dati, capitoli };
+      return { conteggio };
     }
 
     // -----------------------------------------------------------------------
@@ -433,6 +505,7 @@ function esegui(x: Esecuzione, c: Comando): RisultatoComando {
       ) as DatiPds;
       const capitolo = x.capitolo(d.capitolo_id);
       x.richiedi('pds_crea', capitolo, 'creare PdS');
+      x.verificaIdv(d, capitolo);
       x.verificaCollegamentoAccordo(d);
       const base = normalizzaTermine(d);
       const nuovo: Pds = {
@@ -469,6 +542,7 @@ function esegui(x: Esecuzione, c: Comando): RisultatoComando {
       x.verificaCollegamentoAccordo(aggiornato);
       const diff = differenze(corrente, aggiornato, CAMPI_DATI_PDS);
       if (Object.keys(diff).length === 0) return { id: corrente.id };
+      if (diff.idv || diff.capitolo_id) x.verificaIdv(aggiornato, x.capitolo(aggiornato.capitolo_id));
       const finale = { ...aggiornato, ...x.tracciaModifica() };
       x.dati = { ...x.dati, pds: sostituisci(x.dati.pds, finale) };
       x.registra('pds', finale.id, finale.id, 'modifica', x.riferimentoPds(finale), diff);

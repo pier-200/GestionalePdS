@@ -1,4 +1,5 @@
 import { ActionIcon, Alert, Anchor, Badge, Card, Collapse, Group, SimpleGrid, Stack, Table, Text, Title, Tooltip } from '@mantine/core';
+import { etichettaCapitolo } from '../../domain/calcoli';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconAlertTriangle, IconChevronDown, IconChevronRight, IconShieldCheck } from '@tabler/icons-react';
 import { Fragment, useMemo, useState } from 'react';
@@ -9,7 +10,7 @@ import { rapportoSintesi } from '../../esportazione/rapporti';
 import { useDerivati } from '../../stato/derivati';
 import { useApp } from '../../stato/store';
 import { MenuEsporta } from '../componenti/MenuEsporta';
-import { BadgeStato, Importo, IntestazionePagina, Meter, MeterDoppio, Percentuale, StatoVuoto } from '../componenti/base';
+import { BadgeStato, Importo, IntestazionePagina, Meter, MeterDoppio, NomeCapitolo, Percentuale, StatoVuoto } from '../componenti/base';
 import { GraficoCapitoli } from '../componenti/GraficoCapitoli';
 import { RiquadroValore } from '../componenti/RiquadroValore';
 import { SelettoreEsercizio, useEsercizioSelezionato } from '../componenti/SelettoreEsercizio';
@@ -187,7 +188,7 @@ export function Sintesi() {
               <Stack gap={4}>
                 {sintesi.capitoliInSforamento.map((r) => (
                   <Text key={r.capitolo.id} fz="sm">
-                    <b>{r.capitolo.codice}</b>: {testoSforamento(r)}
+                    <b>{etichettaCapitolo(r.capitolo, false)}</b>: {testoSforamento(r)}
                   </Text>
                 ))}
                 {(t.sforamentoStipulato > 0 || t.sforamentoInviato > 0) && (
@@ -244,7 +245,7 @@ export function Sintesi() {
                   <Card key={r.capitolo.id} padding="sm" className={sforamentoDaSegnalare(r) ? 'card-scaduto' : undefined}>
                     <Group justify="space-between" wrap="nowrap" gap="xs">
                       <Group gap={6} wrap="nowrap">
-                        <Text fw={700}>{r.capitolo.codice}</Text>
+                        <NomeCapitolo capitolo={r.capitolo} forte />
                         <IconaSforamento v={r} autorizzato={r.capitolo.sforamento_ignorato} />
                         {r.capitolo.sforamento_ignorato && inSforamento(r) && (
                           <Badge size="sm" variant="light" color="gray" leftSection={<IconShieldCheck size={12} />} style={{ maxWidth: 'none' }} styles={{ label: { overflow: 'visible' } }}>
@@ -303,15 +304,13 @@ export function Sintesi() {
                         <Fragment key={r.capitolo.id}>
                           <Table.Tr className={sforamentoDaSegnalare(r) ? 'riga-scaduto' : undefined}>
                             <Table.Td>
-                              <ActionIcon variant="subtle" size="sm" onClick={() => cambia(r.capitolo.id)} aria-label={`${aperto ? 'Nascondi' : 'Mostra'} i PdS del capitolo ${r.capitolo.codice}`} aria-expanded={aperto}>
+                              <ActionIcon variant="subtle" size="sm" onClick={() => cambia(r.capitolo.id)} aria-label={`${aperto ? 'Nascondi' : 'Mostra'} i PdS del capitolo ${etichettaCapitolo(r.capitolo, false)}`} aria-expanded={aperto}>
                                 {aperto ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
                               </ActionIcon>
                             </Table.Td>
                             <Table.Td>
                               <Group gap={6} wrap="nowrap">
-                                <Text fz="sm" fw={600}>
-                                  {r.capitolo.codice}
-                                </Text>
+                                <NomeCapitolo capitolo={r.capitolo} forte />
                                 <IconaSforamento v={r} autorizzato={r.capitolo.sforamento_ignorato} />
                                 {r.capitolo.sforamento_ignorato && inSforamento(r) && (
                                   <Tooltip label={`Superamento autorizzato: ${r.capitolo.sforamento_note}`}>

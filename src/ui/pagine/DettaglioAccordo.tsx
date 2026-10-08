@@ -2,7 +2,7 @@ import { ActionIcon, Alert, Anchor, Badge, Button, Card, Group, Modal, NumberInp
 import { IconAlertTriangle, IconArrowLeft, IconFileText, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useState, type FormEvent } from 'react';
 import { importoImpegnato, type VistaAccordo, type VistaAtto } from '../../domain/accordi';
-import type { PdsVista } from '../../domain/calcoli';
+import { etichettaCapitolo, type PdsVista } from '../../domain/calcoli';
 import { formattaData } from '../../domain/date';
 import { formattaEuro, formattaPercentuale } from '../../domain/importi';
 import { puo } from '../../domain/permessi';
@@ -136,7 +136,7 @@ function TabellaOrdinativi({ pds, vuoto }: { pds: PdsVista[]; vuoto: string }) {
                   <BadgeStato stato={v.stato} size="sm" />
                 </Table.Td>
                 <Table.Td>{v.pds.ordinativo ?? '—'}</Table.Td>
-                <Table.Td className="num">{v.capitolo?.codice ?? '—'}</Table.Td>
+                <Table.Td className="num">{v.capitolo ? etichettaCapitolo(v.capitolo, false) : '—'}</Table.Td>
                 <Table.Td ta="right">
                   <Importo valore={importoImpegnato(v)} />
                 </Table.Td>

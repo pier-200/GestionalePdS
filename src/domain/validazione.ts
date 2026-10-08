@@ -4,7 +4,7 @@ import { ErroreApp } from './errori';
 import { normalizzaPermessi } from './permessi';
 import type { Capitolo, Centesimi, Pagamento, Pds, TipoAllegato } from './tipi';
 
-/** Limiti coerenti con lo schema SQL (numeric(15,2) e lunghezze dei testi). */
+/** Limiti degli importi e delle lunghezze dei testi. */
 export const LIMITI = {
   testoBreve: 100,
   testoMedio: 300,
@@ -184,11 +184,14 @@ export function validaDatiCapitolo(d: Partial<DatiCapitolo>, parziale = false): 
   if (!parziale || ha(d, 'codice')) {
     out.codice = testo(errori, 'codice', 'Codice capitolo', d.codice, { obbligatorio: true, max: 50 }) ?? '';
   }
+  if (!parziale || ha(d, 'decreto')) {
+    out.decreto = testo(errori, 'decreto', 'Decreto', d.decreto ?? null, { max: LIMITI.testoBreve }) ?? '';
+  }
   if (!parziale || ha(d, 'descrizione')) {
     out.descrizione = testo(errori, 'descrizione', 'Descrizione', d.descrizione ?? null, { max: LIMITI.testoMedio }) ?? '';
   }
   if (!parziale || ha(d, 'finanziato')) {
-    out.finanziato = importo(errori, 'finanziato', 'Totale finanziato', d.finanziato ?? 0) ?? 0;
+    out.finanziato = importo(errori, 'finanziato', 'Fondi aggiunti manualmente', d.finanziato ?? 0) ?? 0;
   }
   if (!parziale || ha(d, 'sforamento_ignorato')) {
     out.sforamento_ignorato = d.sforamento_ignorato === true;
@@ -203,8 +206,9 @@ export function validaDatiCapitolo(d: Partial<DatiCapitolo>, parziale = false): 
   return out;
 }
 
-export function chiaveCapitolo(esercizio: number, codice: string): string {
-  return `${esercizio}|${codice.trim().toLowerCase()}`;
+/** Identità del capitolo: esercizio, codice e decreto. */
+export function chiaveCapitolo(c: Pick<Capitolo, 'esercizio' | 'codice' | 'decreto'>): string {
+  return `${c.esercizio}|${c.codice.trim().toLowerCase()}|${(c.decreto ?? '').trim().toLowerCase()}`;
 }
 
 // ---------------------------------------------------------------------------

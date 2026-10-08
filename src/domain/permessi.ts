@@ -2,7 +2,6 @@ import type { AreaPermesso, Capitolo, Pds, Permessi, Utente } from './tipi';
 
 /**
  * Regole dei permessi (sez. 3), condivise da interfaccia e motore locale.
- * Il backend Supabase applica le stesse regole lato server (RLS e trigger).
  *
  * - Gli utenti attivi possono sempre visualizzare i dati condivisi.
  * - L'amministratore può tutto, compresa la gestione di utenti e permessi.

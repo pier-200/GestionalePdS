@@ -1,4 +1,4 @@
-import { Alert, Anchor, Badge, Button, Card, CopyButton, Group, Loader, Stack, Table, Text, TextInput, ThemeIcon, Title } from '@mantine/core';
+import { Alert, Anchor, Badge, Button, Card, CopyButton, Group, Loader, Stack, Table, Text, ThemeIcon, Title } from '@mantine/core';
 import { IconAlertTriangle, IconCheck, IconCopy, IconInfoCircle, IconPlayerPlay, IconX } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ConfigApp } from '../../config';
@@ -64,7 +64,7 @@ function provaRete(url: string) {
   };
 }
 
-function proveDaConfig(config: ConfigApp | null, urlSupabase: string): Prova[] {
+function proveDaConfig(config: ConfigApp | null): Prova[] {
   const prove: Prova[] = [
     {
       id: 'github-api',
@@ -95,30 +95,6 @@ function proveDaConfig(config: ConfigApp | null, urlSupabase: string): Prova[] {
       nome: `Repository accessi (${b.owner}/${b.repoAccessi})`,
       scopo: 'Portachiavi cifrato letto prima del login.',
       esegui: provaCors(`https://api.github.com/repos/${encodeURIComponent(b.owner)}/${encodeURIComponent(b.repoAccessi)}/contents/keyring.json`, {}, [200, 404]),
-    });
-  }
-  if (b?.tipo === 'supabase') {
-    prove.push({
-      id: 'supabase-progetto',
-      nome: `Supabase – progetto configurato (${new URL(b.url).hostname})`,
-      scopo: 'Necessario per il backend "Supabase" (autenticazione e dati).',
-      esegui: provaCors(`${b.url}/auth/v1/settings`, { headers: { apikey: b.chiavePubblica } }, [200]),
-    });
-  }
-  const url = urlSupabase.trim().replace(/\/+$/, '');
-  if (url && /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)) {
-    prove.push({
-      id: 'supabase-url',
-      nome: `Supabase – ${new URL(url).hostname}`,
-      scopo: 'Raggiungibilità del progetto indicato.',
-      esegui: provaRete(`${url}/auth/v1/health`),
-    });
-  } else {
-    prove.push({
-      id: 'supabase-generico',
-      nome: 'Supabase (supabase.co)',
-      scopo: 'Indica se il backend "Supabase" potrebbe essere utilizzabile da questa rete.',
-      esegui: provaRete('https://supabase.co/'),
     });
   }
   return prove;
@@ -157,8 +133,7 @@ const ICONE = {
 export function Diagnostica() {
   const config = useApp((s) => s.config);
   const fase = useApp((s) => s.fase);
-  const [urlSupabase, setUrlSupabase] = useState('');
-  const prove = useMemo(() => proveDaConfig(config, urlSupabase), [config, urlSupabase]);
+  const prove = useMemo(() => proveDaConfig(config), [config]);
   const [risultati, setRisultati] = useState<Record<string, Risultato>>({});
   const [inCorso, setInCorso] = useState(false);
   const verifiche = useMemo(ambiente, []);
@@ -197,7 +172,6 @@ export function Diagnostica() {
   ].join('\n');
 
   const esitoGitHub = risultati['github-api']?.stato;
-  const esitoSupabase = (risultati['supabase-progetto'] ?? risultati['supabase-url'] ?? risultati['supabase-generico'])?.stato;
 
   return (
     <Stack gap="md">
@@ -220,17 +194,9 @@ export function Diagnostica() {
         }
       />
 
-      {esitoGitHub && esitoSupabase && esitoGitHub !== 'in_corso' && esitoSupabase !== 'in_corso' && (
-        <Alert
-          color={esitoGitHub === 'errore' && esitoSupabase === 'errore' ? 'red' : 'pds'}
-          icon={<IconInfoCircle size={18} />}
-          title="Indicazione"
-        >
-          {esitoSupabase === 'ok'
-            ? 'Supabase risulta raggiungibile: è possibile usare il backend "Supabase", che applica i permessi anche lato server.'
-            : esitoGitHub === 'ok'
-              ? 'Supabase non risulta raggiungibile ma GitHub sì: da questa rete usare il backend "GitHub".'
-              : 'Né GitHub API né Supabase risultano raggiungibili: contattare il referente informatico per sbloccare almeno api.github.com.'}
+      {esitoGitHub === 'errore' && (
+        <Alert color="red" icon={<IconInfoCircle size={18} />} title="Indicazione">
+          GitHub API non risulta raggiungibile: contattare il referente informatico per sbloccare api.github.com.
         </Alert>
       )}
 
@@ -291,17 +257,6 @@ export function Diagnostica() {
             </Table.Tbody>
           </Table>
         </Table.ScrollContainer>
-        {config?.backend.tipo !== 'supabase' && (
-          <TextInput
-            mt="md"
-            label="Verifica un progetto Supabase specifico (facoltativo)"
-            placeholder="https://abcdefghijkl.supabase.co"
-            value={urlSupabase}
-            onChange={(e) => setUrlSupabase(e.currentTarget.value)}
-            description="Dopo aver inserito l'indirizzo premere «Ripeti le prove»."
-            maw={520}
-          />
-        )}
       </Card>
 
       <Card padding="md">

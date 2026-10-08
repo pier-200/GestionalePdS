@@ -1,13 +1,11 @@
 # Workflow di GitHub Actions da attivare
 
-Questi tre workflow sono pronti ma **non ancora attivi**: il token usato per il primo push
+Questo workflow è pronto ma **non ancora attivo**: il token usato per il primo push
 non aveva il permesso `workflow`, che GitHub richiede per creare file sotto `.github/workflows/`.
 
 | File | Cosa fa |
 |---|---|
 | `pubblica.yml` | compila l'applicazione e la pubblica su GitHub Pages a ogni push su `main` |
-| `supabase-installa.yml` | esegue lo script SQL sul progetto Supabase |
-| `supabase-attivo.yml` | evita la sospensione dei progetti Supabase gratuiti inattivi |
 
 ## Come attivarli
 

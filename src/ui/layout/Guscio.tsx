@@ -80,7 +80,7 @@ const ROTTE: Rotta[] = [
   { schema: '/diagnostica', componente: Diagnostica },
 ];
 
-const ETICHETTE_BACKEND = { demo: 'Demo', github: 'GitHub', supabase: 'Supabase' } as const;
+const ETICHETTE_BACKEND = { demo: 'Demo', github: 'GitHub' } as const;
 
 function iniziali(nome: string): string {
   return nome

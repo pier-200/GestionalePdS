@@ -29,10 +29,6 @@ export async function creaBackend(config: ConfigApp): Promise<Backend> {
       const { GitHubBackend } = await import('../backend/github/GitHubBackend');
       return new GitHubBackend(b);
     }
-    case 'supabase': {
-      const { SupabaseBackend } = await import('../backend/supabase/SupabaseBackend');
-      return new SupabaseBackend(b);
-    }
   }
 }
 

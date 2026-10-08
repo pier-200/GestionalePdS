@@ -8,9 +8,8 @@ import { PaginaPubblica } from '../layout/PaginaPubblica';
 import { href } from '../router';
 
 /**
- * Configurazione al primo utilizzo:
- * - GitHub: si inserisce il token di accesso ai repository e si crea l'amministratore;
- * - Supabase: un utente creato dalla console di Supabase diventa amministratore.
+ * Configurazione al primo utilizzo: si inserisce il token di accesso ai
+ * repository GitHub e si crea l'amministratore.
  */
 export function PrimoAvvio() {
   const backend = useApp((s) => s.backend);
@@ -77,13 +76,6 @@ export function PrimoAvvio() {
                 </Text>
               </Alert>
             )}
-            {!github && (
-              <Alert color="pds" variant="light" icon={<IconInfoCircle size={18} />}>
-                <Text fz="sm">
-                  Accedi con l'utente creato nella console di Supabase (Authentication → Users): il nome utente è la parte dell'indirizzo prima della "@". Questo utente diventerà l'amministratore del gestionale.
-                </Text>
-              </Alert>
-            )}
             {errore && (
               <Alert color="red" icon={<IconAlertCircle size={18} />} role="alert">
                 {errore}
@@ -112,7 +104,7 @@ export function PrimoAvvio() {
             <TextInput label="Nome e cognome" value={nome} onChange={(e) => setNome(e.currentTarget.value)} required autoComplete="name" />
             <PasswordInput
               label="Password"
-              description={github ? 'Almeno 10 caratteri, con lettere e cifre' : "Password dell'utente creato in Supabase"}
+              description="Almeno 10 caratteri, con lettere e cifre"
               value={password}
               onChange={(e) => setPassword(e.currentTarget.value)}
               error={erroreP}

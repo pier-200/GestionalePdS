@@ -57,7 +57,7 @@ export function PdsEliminati() {
     {
       chiave: 'capitolo',
       titolo: 'Capitolo',
-      ordina: (v) => v.capitolo?.codice ?? '',
+      ordina: (v) => (v.capitolo ? etichettaCapitolo(v.capitolo) : ''),
       render: (v) => <Text fz="sm">{v.capitolo ? etichettaCapitolo(v.capitolo) : '—'}</Text>,
     },
     { chiave: 'ditta', titolo: 'Ditta', ordina: (v) => v.pds.ditta, render: (v) => <Text fz="sm">{v.pds.ditta ?? '—'}</Text> },

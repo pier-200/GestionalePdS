@@ -1,4 +1,5 @@
 import { Box, Group, Stack, Text, Tooltip, useComputedColorScheme } from '@mantine/core';
+import { etichettaCapitolo as nomeCapitolo } from '../../domain/calcoli';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconAlertTriangle } from '@tabler/icons-react';
 import { formattaEuro, formattaEuroCompatto, formattaPercentuale, rapporto } from '../../domain/importi';
@@ -78,7 +79,7 @@ export function GraficoCapitoli({ righe }: { righe: RigaSintesi[] }) {
         {asse}
         {righe.map((r, indiceRiga) => {
           const sforamento = sforamentoDaSegnalare(r);
-          const etichettaCapitolo = r.capitolo.codice;
+          const etichettaCapitolo = nomeCapitolo(r.capitolo, false);
           return (
             <div key={r.capitolo.id} style={{ display: 'contents' }}>
               <Box py={8} pr={4} style={{ borderTop: '1px solid var(--pds-griglia)' }}>

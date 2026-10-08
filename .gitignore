@@ -8,5 +8,4 @@ Thumbs.db
 .env
 .env.*
 .vscode/
-supabase/.temp/
 .claude/

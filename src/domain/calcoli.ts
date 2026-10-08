@@ -1,7 +1,7 @@
 import { formattaData } from './date';
 import { rapporto, sommaCentesimi } from './importi';
 import { avvisoScadenza, dataScadenza, statoPds, type LivelloAvviso, type StatoPds } from './stato';
-import type { AccordoQuadro, Allegato, AttoAdesione, Capitolo, Centesimi, DataISO, DatiCondivisi, ID, Pagamento, Pds } from './tipi';
+import type { AccordoQuadro, Allegato, AttoAdesione, Capitolo, Centesimi, DataISO, DatiCondivisi, FondoIdv, ID, Pagamento, Pds } from './tipi';
 
 /** PdS con tutti i valori derivati, pronto per elenchi, filtri ed export. */
 export interface PdsVista {
@@ -93,15 +93,32 @@ export function vistePds(dati: DatiCondivisi, oggi: DataISO, sogliaGiorni: numbe
 export const confrontoNaturale = new Intl.Collator('it', { numeric: true, sensitivity: 'base' }).compare;
 
 export function ordinaCapitoli(capitoli: Capitolo[]): Capitolo[] {
-  return [...capitoli].sort((a, b) => b.esercizio - a.esercizio || confrontoNaturale(a.codice, b.codice));
+  return [...capitoli].sort((a, b) => b.esercizio - a.esercizio || confrontoNaturale(etichettaCapitolo(a, false), etichettaCapitolo(b, false)));
+}
+
+/** Totale finanziato del capitolo: fondi degli IDV allineati dal SIEFIN più quelli aggiunti manualmente. */
+export function finanziatoCapitolo(c: Pick<Capitolo, 'finanziato' | 'idv'>): Centesimi {
+  return c.finanziato + sommaCentesimi((c.idv ?? []).map((f) => f.assegnato));
+}
+
+/** IDV dei capitoli di un esercizio, con il capitolo a cui appartengono. */
+export function idvPerCodice(capitoli: Capitolo[], esercizio: number): Map<string, { fondo: FondoIdv; capitolo: Capitolo }> {
+  const mappa = new Map<string, { fondo: FondoIdv; capitolo: Capitolo }>();
+  for (const capitolo of capitoli) {
+    if (capitolo.esercizio !== esercizio) continue;
+    for (const fondo of capitolo.idv ?? []) mappa.set(fondo.idv, { fondo, capitolo });
+  }
+  return mappa;
 }
 
 export function eserciziDisponibili(dati: Pick<DatiCondivisi, 'capitoli'>): number[] {
   return [...new Set(dati.capitoli.map((c) => c.esercizio))].sort((a, b) => b - a);
 }
 
-export function etichettaCapitolo(c: Pick<Capitolo, 'codice' | 'esercizio'>, conEsercizio = true): string {
-  return conEsercizio ? `${c.codice} (${c.esercizio})` : c.codice;
+/** Nome completo del capitolo: codice e decreto (es. "1189/7/61 Fuori Area 2026 - Anticipazione"). */
+export function etichettaCapitolo(c: Pick<Capitolo, 'codice' | 'esercizio' | 'decreto'>, conEsercizio = true): string {
+  const nome = c.decreto ? `${c.codice} ${c.decreto}` : c.codice;
+  return conEsercizio ? `${nome} (${c.esercizio})` : nome;
 }
 
 /**

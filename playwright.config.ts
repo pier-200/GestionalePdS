@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 /**
  * Test end-to-end sull'applicazione compilata, nel browser Microsoft Edge installato
- * (nessun download di browser necessario). I backend GitHub e Supabase sono emulati
+ * (nessun download di browser necessario). Il backend GitHub è emulato
  * intercettando le richieste di rete del browser.
  */
 export default defineConfig({

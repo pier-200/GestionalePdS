@@ -1,5 +1,5 @@
 import { importoImpegnato, scadenzaContrattuale, type VistaAccordo } from '../domain/accordi';
-import type { PdsVista } from '../domain/calcoli';
+import { etichettaCapitolo, type PdsVista } from '../domain/calcoli';
 import { euroDaCentesimi } from '../domain/importi';
 import type { RigaSintesi, SintesiFinanziaria } from '../domain/sintesi';
 import { ELENCO_STATI, STATI, type StatoPds } from '../domain/stato';
@@ -74,7 +74,7 @@ const COLONNE_RIEPILOGO_STATO: ColonnaEsportazione<RigaStatoPds>[] = [
 export function rapportoElencoPds(viste: PdsVista[], esercizio: number): Rapporto {
   const perCapitolo = new Map<string, RigaCapitoloPds>();
   for (const v of viste) {
-    const codice = v.capitolo?.codice ?? 'senza capitolo';
+    const codice = v.capitolo ? etichettaCapitolo(v.capitolo, false) : 'senza capitolo';
     const r = perCapitolo.get(codice) ?? { capitolo: codice, nPds: 0, trasmesso: 0, stipulato: 0, pagato: 0 };
     r.nPds += 1;
     r.trasmesso += v.pds.data_invio || v.pds.data_stipula ? (v.pds.importo_inviato ?? 0) : 0;
@@ -135,7 +135,7 @@ export function rapportoElencoPds(viste: PdsVista[], esercizio: number): Rapport
 // ---------------------------------------------------------------------------
 
 export function rapportoSintesi(sintesi: SintesiFinanziaria, esercizio: number): Rapporto {
-  const righe = sintesi.righe.map((r) => ({ ...r, esercizio: r.capitolo.esercizio, codice: r.capitolo.codice }));
+  const righe = sintesi.righe.map((r) => ({ ...r, esercizio: r.capitolo.esercizio, codice: etichettaCapitolo(r.capitolo, false) }));
   const totale = { ...sintesi.totale, esercizio: null, codice: 'TOTALE' };
   const colonne = colonneSintesi();
   // le colonne del foglio sintesi: 0 esercizio, 1 capitolo, 2 finanziato, 3 trasmesso, 5 stipulato, 8 pagato, 12 disponibile
@@ -183,7 +183,7 @@ export function rapportoSintesi(sintesi: SintesiFinanziaria, esercizio: number):
 // ---------------------------------------------------------------------------
 
 const COLONNE_CAPITOLI: ColonnaEsportazione<RigaSintesi>[] = [
-  { titolo: 'Capitolo di spesa', tipo: 'testo', larghezza: 18, valore: (r) => r.capitolo.codice },
+  { titolo: 'Capitolo di spesa', tipo: 'testo', larghezza: 36, valore: (r) => etichettaCapitolo(r.capitolo, false) },
   { titolo: 'Esercizio finanziario', tipo: 'numero', larghezza: 11, valore: (r) => r.capitolo.esercizio },
   { titolo: 'Totale finanziato', tipo: 'importo', larghezza: 17, valore: (r) => euro(r.finanziato) },
   { titolo: 'Impegnato (Trasmesso)', tipo: 'importo', larghezza: 18, valore: (r) => euro(r.inviato) },
@@ -284,7 +284,7 @@ const COLONNE_ORDINATIVI: ColonnaEsportazione<RigaOrdinativo>[] = [
   { titolo: 'Numero PdS', tipo: 'testo', larghezza: 14, valore: (r) => r.vista.numeroCompleto },
   { titolo: 'Stato', tipo: 'testo', larghezza: 16, valore: (r) => STATI[r.vista.stato].etichetta },
   { titolo: 'Ordinativo', tipo: 'testo', larghezza: 18, valore: (r) => r.vista.pds.ordinativo },
-  { titolo: 'Capitolo di spesa', tipo: 'testo', larghezza: 14, valore: (r) => r.vista.capitolo?.codice ?? null },
+  { titolo: 'Capitolo di spesa', tipo: 'testo', larghezza: 36, valore: (r) => (r.vista.capitolo ? etichettaCapitolo(r.vista.capitolo, false) : null) },
   { titolo: 'Ditta', tipo: 'testo', larghezza: 26, valore: (r) => r.vista.pds.ditta },
   { titolo: 'Impegnato', tipo: 'importo', larghezza: 16, valore: (r) => euro(importoImpegnato(r.vista)) },
   { titolo: 'Pagato', tipo: 'importo', larghezza: 16, valore: (r) => euro(r.vista.totalePagato) },

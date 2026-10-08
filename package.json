@@ -20,7 +20,6 @@
     "@mantine/hooks": "^9.6.1",
     "@mantine/modals": "^9.6.1",
     "@mantine/notifications": "^9.6.1",
-    "@supabase/supabase-js": "^2.116.0",
     "@tabler/icons-react": "^3.46.0",
     "dayjs": "^1.11.23",
     "fflate": "^0.8.2",
@@ -30,7 +29,6 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.8",
     "@playwright/test": "^1.63.0",
     "@types/node": "^22.20.3",
     "@types/react": "^19.3.0",

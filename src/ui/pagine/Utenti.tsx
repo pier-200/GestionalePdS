@@ -377,7 +377,7 @@ export function Utenti() {
         <Alert color="yellow" variant="light" icon={<IconInfoCircle size={18} />} mb="md" title="Come sono applicati i permessi">
           {backend.tipo === 'github' ? (
             <>
-              Con l'archivio su GitHub i permessi sono applicati dall'applicazione, mentre GitHub consente l'accesso a chiunque disponga del token cifrato nel portachiavi. È adeguato per un gruppo di colleghi fidati; per un controllo lato server usare Supabase. Quando un utente lascia l'ufficio, dopo averlo eliminato{' '}
+              Con l'archivio su GitHub i permessi sono applicati dall'applicazione, mentre GitHub consente l'accesso a chiunque disponga del token cifrato nel portachiavi. È adeguato per un gruppo di colleghi fidati. Quando un utente lascia l'ufficio, dopo averlo eliminato{' '}
               <Anchor component="button" type="button" fz="sm" onClick={() => setTokenAperto(true)}>
                 aggiorna il token
               </Anchor>

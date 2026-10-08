@@ -33,7 +33,7 @@ test.describe('backend GitHub (emulato)', () => {
     await page.getByRole('button', { name: 'Nuovo capitolo' }).click();
     let modale = page.getByRole('dialog');
     await modale.getByLabel('Codice capitolo').fill('4455');
-    await modale.getByLabel('Totale finanziato').fill('25000,50');
+    await modale.getByLabel('Fondi aggiunti manualmente').fill('25000,50');
     await modale.getByRole('button', { name: 'Salva' }).click();
     await notifica(page, 'Capitolo creato');
 

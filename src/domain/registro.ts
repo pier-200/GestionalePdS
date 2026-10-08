@@ -25,7 +25,10 @@ export const CAMPI: Record<EntitaRegistro, Record<string, DefinizioneCampo>> = {
     esercizio: { etichetta: 'Esercizio finanziario', tipo: 'numero' },
     codice: { etichetta: 'Codice capitolo', tipo: 'testo' },
     descrizione: { etichetta: 'Descrizione', tipo: 'testo' },
-    finanziato: { etichetta: 'Totale finanziato', tipo: 'importo' },
+    decreto: { etichetta: 'Decreto', tipo: 'testo' },
+    finanziato: { etichetta: 'Fondi aggiunti manualmente', tipo: 'importo' },
+    // nello storico l'allineamento SIEFIN riporta il totale assegnato sugli IDV, non l'elenco
+    idv: { etichetta: 'Fondi SIEFIN (totale IDV)', tipo: 'importo' },
     sforamento_ignorato: { etichetta: 'Superamento del finanziato autorizzato', tipo: 'booleano' },
     sforamento_note: { etichetta: 'Motivazione del superamento', tipo: 'testo' },
   },

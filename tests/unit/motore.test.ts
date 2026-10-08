@@ -123,7 +123,7 @@ describe('capitoli', () => {
     esegui('admin', { tipo: 'capitolo.modifica', id: c1, modifiche: { finanziato: 1 }, originale: { finanziato: 100_000_00 } });
     const e = errore(() => esegui('admin', { tipo: 'capitolo.modifica', id: c1, modifiche: { finanziato: 2 }, originale: { finanziato: 100_000_00 } }));
     expect(e.codice).toBe('CONFLITTO');
-    expect(e.message).toMatch(/Totale finanziato/);
+    expect(e.message).toMatch(/Fondi aggiunti manualmente/);
   });
 });
 

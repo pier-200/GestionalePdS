@@ -1,7 +1,7 @@
 import type { Comando, RisultatoComando } from '../domain/comandi';
 import type { Allegato, DataISO, DatiCondivisi, EntitaRegistro, ID, Utente, VoceRegistro } from '../domain/tipi';
 
-export type TipoBackend = 'demo' | 'github' | 'supabase';
+export type TipoBackend = 'demo' | 'github';
 
 export interface Sessione {
   utente: Utente;

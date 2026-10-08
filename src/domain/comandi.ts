@@ -1,4 +1,4 @@
-import type { AccordoQuadro, Allegato, AttoAdesione, Capitolo, DataISO, ID, Pagamento, Pds, Permessi, Ruolo } from './tipi';
+import type { AccordoQuadro, Allegato, AttoAdesione, Capitolo, DataISO, ID, Pagamento, Pds, Permessi, RigaSiefin, Ruolo } from './tipi';
 import type { CampoDatiPds } from './permessi';
 
 /**
@@ -8,7 +8,7 @@ import type { CampoDatiPds } from './permessi';
  * viene respinta con un errore di conflitto invece di sovrascriverla.
  */
 
-export type DatiCapitolo = Pick<Capitolo, 'esercizio' | 'codice' | 'descrizione' | 'finanziato' | 'sforamento_ignorato' | 'sforamento_note'>;
+export type DatiCapitolo = Pick<Capitolo, 'esercizio' | 'codice' | 'decreto' | 'descrizione' | 'finanziato' | 'sforamento_ignorato' | 'sforamento_note'>;
 export type DatiAccordo = Pick<
   AccordoQuadro,
   'numero' | 'oggetto' | 'ditta' | 'dec' | 'protocollo_stipula' | 'data_stipula' | 'durata_giorni' | 'importo' | 'note'
@@ -38,6 +38,11 @@ export type Comando =
   | { tipo: 'capitolo.modifica'; id: ID; modifiche: Partial<DatiCapitolo>; originale: Partial<DatiCapitolo> }
   | { tipo: 'capitolo.elimina'; id: ID }
   | { tipo: 'capitoli.copia'; esercizioOrigine: number; esercizioDestinazione: number; copiaImporti: boolean }
+  /**
+   * Allineamento SIEFIN: gli IDV dei capitoli presenti nell'export sostituiscono
+   * quelli registrati (non si sommano); i capitoli mancanti vengono creati.
+   */
+  | { tipo: 'capitoli.allinea'; esercizio: number; righe: RigaSiefin[] }
   | { tipo: 'accordo.crea'; dati: DatiAccordo }
   | { tipo: 'accordo.modifica'; id: ID; modifiche: Partial<DatiAccordo>; originale: Partial<DatiAccordo> }
   | { tipo: 'accordo.elimina'; id: ID }

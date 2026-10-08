@@ -135,3 +135,12 @@ Da **Utenti e permessi**: creare utenti, assegnare ruolo e permessi, reimpostare
 Da **Progetti di spesa → PdS eliminati**: ripristinare o eliminare definitivamente i PdS eliminati dagli utenti.
 Da **Capitoli di spesa**: autorizzare il superamento del finanziato di un capitolo, motivandolo.
 Con l'archivio GitHub, quando un collega lascia l'ufficio, dopo averlo eliminato usare **Aggiorna token GitHub**.
+
+## Allineamento SIEFIN
+
+Nella pagina «Capitoli di spesa» il pulsante **Allineamento SIEFIN** carica l'export del SIEFIN (file `Export_gg_mm_aaaa hh_mm_ss.xls`). Dal file si leggono IDV, voce di spesa, CPT/ART/PTF, PC3, assegnato, attività e decreto.
+
+- **Capitolo = CPT/ART/PTF + decreto**: lo stesso codice con decreti diversi dà capitoli distinti (es. `1189/7/61` «Fuori Area 2026 - Anticipazione» e «Fuori Area 2025 - Completamento»). Il decreto compare in piccolo sotto il codice.
+- Il **finanziato** del capitolo è la somma degli assegnati dei suoi IDV più gli eventuali **fondi aggiunti manualmente** (matita sul capitolo). Il numero nella colonna IDV apre il dettaglio delle voci.
+- Un nuovo caricamento **riallinea** e non somma: gli IDV dei capitoli presenti nel file sostituiscono quelli registrati. Fondi manuali e capitoli assenti dal file restano invariati.
+- Nei PdS l'**IDV si digita** e deve esistere sul capitolo scelto (il primo IDV riconosciuto seleziona il capitolo). Se i fondi non sono ancora assegnati, il PdS si inserisce senza IDV.

@@ -22,17 +22,44 @@ export interface Tracciamento {
   updated_by: ID | null;
 }
 
-/** Capitolo di spesa, definito per esercizio finanziario (sez. 4). */
+/** Assegnazione di fondi su un capitolo, identificata da un IDV (riga dell'export SIEFIN). */
+export interface FondoIdv {
+  idv: string;
+  /** Voce di spesa: descrizione dell'assegnazione. */
+  voce: string;
+  /** PC3: voce generale, specificata dalla voce di spesa. */
+  pc3: string;
+  cod_attivita: string;
+  desc_attivita: string;
+  /** Fondi assegnati su questo IDV. */
+  assegnato: Centesimi;
+}
+
+/** Riga dell'export SIEFIN: un IDV con il capitolo (CPT/ART/PTF + decreto) a cui appartiene. */
+export interface RigaSiefin extends FondoIdv {
+  codice: string;
+  decreto: string;
+}
+
+/**
+ * Capitolo di spesa, definito per esercizio finanziario (sez. 4).
+ * Lo stesso codice con decreti diversi identifica capitoli distinti
+ * (es. "1189/7/61" «Fuori Area 2026 - Anticipazione» e «Fuori Area 2025 - Completamento»).
+ */
 export interface Capitolo extends Tracciamento {
   id: ID;
   /** Esercizio finanziario di competenza (anno). */
   esercizio: number;
-  /** Identificativo del capitolo (es. "1234" o "1234/05"). */
+  /** Identificativo del capitolo (es. "1234" o "1189/7/61" = CPT/ART/PTF). */
   codice: string;
+  /** Decreto di finanziamento: parte dell'identità del capitolo (assente nei dati precedenti). */
+  decreto?: string;
   /** Denominazione descrittiva (facoltativa, non mostrata nell'interfaccia). */
   descrizione: string;
-  /** Totale finanziato sul capitolo. */
+  /** Fondi aggiunti manualmente: si sommano a quelli degli IDV allineati dal SIEFIN. */
   finanziato: Centesimi;
+  /** IDV allineati dal SIEFIN (assente nei dati precedenti). */
+  idv?: FondoIdv[];
   /** L'amministratore ha autorizzato il superamento del finanziato: l'avviso rosso non viene mostrato. */
   sforamento_ignorato: boolean;
   /** Motivazione del superamento autorizzato. */

@@ -13,21 +13,19 @@ Questo documento risponde alle richieste delle sezioni 2 e 11 della specifica: v
 
 | Opzione | Raggiungibilità dalla rete dell'ufficio | Autenticazione e permessi | Costi e manutenzione | Esito |
 |---|---|---|---|---|
-| **GitHub Pages + Supabase** (PostgreSQL, Auth, Storage) | dipende dal filtro: dominio `*.supabase.co` | robusti: Row Level Security e trigger nel database | gratuito; il progetto si sospende dopo ~7 giorni di inattività (risolto con job GitHub Actions) | **scelto** (archivio consigliato quando raggiungibile) |
-| **GitHub Pages + repository GitHub privato** | massima: usa solo domini GitHub | applicati dall'applicazione; accesso ai dati protetto da token cifrato con la password di ogni utente | gratuito, nessuna sospensione; token da rinnovare alla scadenza | **scelto** (archivio garantito sulla rete dell'ufficio) |
+| **GitHub Pages + repository GitHub privato** | massima: usa solo domini GitHub | applicati dall'applicazione; accesso ai dati protetto da token cifrato con la password di ogni utente | gratuito, nessuna sospensione; token da rinnovare alla scadenza | **scelto** |
 | GitHub Pages + Firebase | dominio `googleapis.com` spesso consentito ma non garantito | buoni (regole di sicurezza) | la creazione di utenti da parte dell'amministratore e l'archivio file richiedono il piano a pagamento | scartato |
 | Server applicativo (Vercel, Netlify, Render…) | domini terzi, spesso bloccati | a carico del codice server | più componenti da mantenere | scartato |
 | GitHub Codespaces / Actions come server | non adatti a un uso interattivo continuo | – | a consumo | scartato |
 
-Poiché la raggiungibilità di Supabase dalla rete dell'ufficio non è verificabile a priori, l'applicazione è stata progettata con un **livello dati intercambiabile**: la stessa interfaccia e le stesse regole funzionano con entrambi gli archivi (più un archivio dimostrativo locale). La scelta si fa al momento della pubblicazione, dopo la verifica con la pagina **Diagnostica connessione**, modificando `config.json`.
+La rete dell'ufficio consente GitHub: i dati stanno in un repository GitHub privato. Il livello dati resta un'interfaccia comune, usata anche dall'archivio dimostrativo locale (prove e test automatici); l'archivio si indica in `config.json`.
 
 ### Stack
 
 - **Frontend**: React 19, TypeScript, Mantine 9 (componenti accessibili, tema chiaro/scuro, date in italiano), Vite. Routing con hash (`#/percorso`), compatibile con GitHub Pages senza configurazioni server.
 - **Hosting**: GitHub Pages, pubblicato automaticamente da GitHub Actions (build, controllo dei tipi e test a ogni modifica).
 - **Archivio GitHub**: API Git di GitHub (commit atomici con controllo "fast-forward"), WebCrypto (PBKDF2-SHA256 600.000 iterazioni, AES-GCM 256).
-- **Archivio Supabase**: PostgreSQL con RLS, trigger e funzioni; Supabase Auth; Supabase Storage; una Edge Function per le operazioni che richiedono la chiave di servizio (creazione, reimpostazione password ed eliminazione utenti).
-- **Test**: Vitest (dominio, motore, backend GitHub su emulatore, schema SQL su PostgreSQL reale con PGlite, backend Supabase ed Edge Function su emulatore PostgREST/Auth/Storage), Playwright (end-to-end nel browser Edge con i tre archivi).
+- **Test**: Vitest (dominio, motore, backend GitHub su emulatore), Playwright (end-to-end nel browser Edge con archivio demo e GitHub emulato).
 
 ## 3. Architettura
 
@@ -38,20 +36,18 @@ Interfaccia (React)
 Stato applicativo ──► Backend (interfaccia comune) ───────────────┘
                         ├─ DemoBackend      → motore locale → localStorage / IndexedDB
                         ├─ GitHubBackend    → motore locale → commit nel repository privato
-                        └─ SupabaseBackend  → motore locale (controlli e messaggi) → PostgREST/RPC
-                                                              → RLS + trigger (controlli definitivi)
 ```
 
 - **Dominio** (`src/domain`): tipi, calcolo dello stato e delle scadenze, sintesi, permessi, validazioni, descrizione dello storico. È puro e interamente testato.
-- **Motore** (`src/motore`): applica un comando ai dati verificando permessi, validazioni e conflitti e produce le voci dello storico. Con Supabase è eseguito prima dell'invio per dare messaggi immediati; il database ripete comunque tutti i controlli.
+- **Motore** (`src/motore`): applica un comando ai dati verificando permessi, validazioni e conflitti e produce le voci dello storico.
 - **Concorrenza**: ogni modifica porta con sé i valori dei campi "visti" dall'utente. Se nel frattempo un altro utente ha cambiato gli stessi campi la modifica viene respinta con un messaggio di conflitto (nessuna sovrascrittura silenziosa). Con GitHub, modifiche contemporanee a campi diversi vengono riapplicate automaticamente sull'ultima versione.
 - **Aggiornamento automatico**: ogni minuto e al ritorno sulla finestra l'app verifica, con una richiesta leggera, se altri hanno modificato i dati.
 
 ## 4. Modello dati
 
-Gli importi sono **interi in centesimi** nell'applicazione e nel repository GitHub, `numeric(15,2)` in PostgreSQL; le date sono `YYYY-MM-DD`.
+Gli importi sono **interi in centesimi** nell'applicazione e nel repository GitHub; le date sono `YYYY-MM-DD`.
 
-- **Capitolo di spesa**: esercizio, codice (univoco nell'esercizio), denominazione (non mostrata nell'interfaccia), totale finanziato, autorizzazione al superamento del finanziato (flag + motivazione, riservata all'amministratore).
+- **Capitolo di spesa**: esercizio, codice (CPT/ART/PTF) e decreto (insieme univoci nell'esercizio), denominazione (non mostrata nell'interfaccia), fondi aggiunti manualmente, elenco degli IDV allineati dal SIEFIN (IDV, voce di spesa, PC3, attività, assegnato; il finanziato è la somma degli assegnati più i fondi manuali), autorizzazione al superamento del finanziato (flag + motivazione, riservata all'amministratore).
 - **Accordo quadro**: numero, oggetto, ditta, DEC, protocollo e data di stipula, durata in giorni, importo (capienza contrattuale), note.
 - **Atto di adesione** (solo quelli *a quantità indeterminata*): accordo quadro, numero, oggetto, protocollo e data di stipula, durata in giorni (predefinita 365), valore stipulato, note. Gli atti *a quantità determinata* non sono una riga a sé: coincidono con i PdS collegati direttamente all'accordo quadro.
 - **PdS**: numero (**solo cifre**; l'anno arriva dall'esercizio del capitolo, quindi il PdS si legge `18/2026`), capitolo (→ esercizio), accordo quadro ed eventuale atto di adesione, ditta, ordinativo, IDV (**più codici separati da virgola**), collaboratore/DEC; importo inviato, protocollo e data di invio; protocollo, data e valore della stipula; modalità del termine (durata in giorni o mesi dalla stipula, oppure data fissa); saldo (flag, data, totale pagato a saldo); note; **eliminazione logica** (istante e utente).
@@ -105,18 +101,10 @@ I PdS eliminati logicamente non entrano in nessun conteggio: l'interfaccia li ti
 
 ## 6. Sicurezza
 
-### Archivio Supabase
-- Row Level Security su tutte le tabelle; lettura solo per profili attivi; ogni area di modifica verificata nel database, compreso l'ambito dei capitoli.
-- Trigger che verificano i permessi **per gruppi di campi** (i dati del PdS, il saldo e l'eliminazione logica richiedono permessi diversi), ricalcolano il totale a saldo e scrivono lo storico: lo storico non può essere alterato dall'applicazione.
-- Eliminazione logica: `pds_crea` sposta il PdS tra gli eliminati; il ripristino e l'eliminazione definitiva (`DELETE`) sono consentiti al solo amministratore, come l'autorizzazione al superamento del finanziato di un capitolo.
-- Accordi quadro e atti di adesione: area di permesso `accordi`; un trigger impedisce di spostare un atto su un altro accordo quadro e di collegare a un PdS un atto che non appartiene all'accordo quadro indicato.
-- Tabelle esposte alle API solo tramite `GRANT` espliciti; la chiave pubblica nel browser non consente nulla senza un utente autenticato e abilitato.
-- La chiave di servizio resta nella Edge Function, che verifica che il chiamante sia un amministratore attivo.
-
 ### Archivio GitHub
 - Il repository dei dati è **privato**; il token di accesso non è mai pubblicato in chiaro.
 - Il portachiavi pubblico contiene solo dati cifrati: il token è cifrato con una chiave K; ogni utente ha una chiave personale protetta dalla propria password (PBKDF2 600.000 iterazioni + AES-GCM) che sblocca K. Gli amministratori custodiscono le chiavi personali con una chiave amministrativa, così possono reimpostare password e sostituire il token senza conoscere le password altrui. I nomi utente non compaiono in chiaro.
-- **Limite dichiarato**: i permessi sono applicati dall'applicazione. Un utente abilitato e tecnicamente esperto, una volta entrato, dispone del token e potrebbe modificare i dati direttamente su GitHub. Ogni salvataggio resta comunque nella cronologia del repository (recuperabile). È adatto a un gruppo di colleghi fidati; per un controllo lato server usare Supabase.
+- **Limite dichiarato**: i permessi sono applicati dall'applicazione. Un utente abilitato e tecnicamente esperto, una volta entrato, dispone del token e potrebbe modificare i dati direttamente su GitHub. Ogni salvataggio resta comunque nella cronologia del repository (recuperabile). È adatto a un gruppo di colleghi fidati.
 - Quando un utente lascia l'ufficio: eliminarlo e **sostituire il token** (pagina Utenti) revocando il precedente su GitHub.
 - Il token dei fine-grained PAT può scadere: un amministratore lo rinnova direttamente dalla pagina di accesso.
 

@@ -1,4 +1,4 @@
-import type { PdsVista } from '../domain/calcoli';
+import { etichettaCapitolo, type PdsVista } from '../domain/calcoli';
 import { aggiungiGrafici, type DefinizioneGrafico } from './grafici';
 import { dateUTC, formattaData, oggiISO } from '../domain/date';
 import { euroDaCentesimi, formattaNumeroImporto } from '../domain/importi';
@@ -42,7 +42,7 @@ export const COLONNE_PDS: ColonnaEsportazione<PdsVista>[] = [
   { titolo: 'Numero PdS', tipo: 'testo', larghezza: 14, valore: (v) => v.numeroCompleto },
   { titolo: 'Stato', tipo: 'testo', larghezza: 16, valore: (v) => STATI[v.stato].etichetta },
   { titolo: 'Esercizio finanziario', tipo: 'numero', larghezza: 11, valore: (v) => v.esercizio },
-  { titolo: 'Capitolo di spesa', tipo: 'testo', larghezza: 12, valore: (v) => v.capitolo?.codice ?? null },
+  { titolo: 'Capitolo di spesa', tipo: 'testo', larghezza: 36, valore: (v) => (v.capitolo ? etichettaCapitolo(v.capitolo, false) : null) },
   { titolo: 'Ditta', tipo: 'testo', larghezza: 26, valore: (v) => v.pds.ditta },
   { titolo: 'Accordo quadro', tipo: 'testo', larghezza: 24, valore: (v) => v.accordo?.numero ?? null },
   { titolo: 'Atto di adesione', tipo: 'testo', larghezza: 18, valore: (v) => v.atto?.numero ?? null },
@@ -82,7 +82,7 @@ type RigaSintesiEsportata = ValoriSintesi & { esercizio: number | null; codice: 
 export function colonneSintesi(): ColonnaEsportazione<RigaSintesiEsportata>[] {
   return [
     { titolo: 'Esercizio finanziario', tipo: 'numero', larghezza: 11, valore: (r) => r.esercizio },
-    { titolo: 'Capitolo di spesa', tipo: 'testo', larghezza: 14, valore: (r) => r.codice },
+    { titolo: 'Capitolo di spesa', tipo: 'testo', larghezza: 36, valore: (r) => r.codice },
     { titolo: 'Totale finanziato', tipo: 'importo', larghezza: 17, valore: (r) => euro(r.finanziato) },
     { titolo: 'Impegnato (Trasmesso)', tipo: 'importo', larghezza: 17, valore: (r) => euro(r.inviato) },
     { titolo: '% trasmesso su finanziato', tipo: 'percentuale', larghezza: 11, valore: (r) => r.percInviato },
@@ -107,7 +107,7 @@ export function fogliSintesi(sintesi: SintesiFinanziaria): Foglio<RigaSintesiEsp
   return {
     nome: 'Sintesi per capitolo',
     colonne: colonneSintesi(),
-    righe: sintesi.righe.map((r) => ({ ...r, esercizio: r.capitolo.esercizio, codice: r.capitolo.codice })),
+    righe: sintesi.righe.map((r) => ({ ...r, esercizio: r.capitolo.esercizio, codice: etichettaCapitolo(r.capitolo, false) })),
     totale: { ...sintesi.totale, esercizio: null, codice: 'TOTALE' },
   };
 }

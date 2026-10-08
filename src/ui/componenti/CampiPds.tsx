@@ -1,7 +1,8 @@
 import { Autocomplete, Select, SimpleGrid, TagsInput, TextInput } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import { attiDiAccordo, etichettaAtto } from '../../domain/accordi';
-import { elencoIdv, eserciziDisponibili, idvDaElenco } from '../../domain/calcoli';
+import { elencoIdv, eserciziDisponibili, etichettaCapitolo, idvDaElenco, idvPerCodice } from '../../domain/calcoli';
+import { formattaEuro } from '../../domain/importi';
 import { annoDi } from '../../domain/date';
 import { puo } from '../../domain/permessi';
 import type { AreaPermesso, ID } from '../../domain/tipi';
@@ -70,10 +71,34 @@ export function CampiIdentificativiPds({
     () =>
       capitoli
         .filter((c) => c.esercizio === annoAttivo)
-        .sort((a, b) => a.codice.localeCompare(b.codice, 'it', { numeric: true }))
-        .map((c) => ({ value: c.id, label: c.codice, disabled: !puo(utente, area, c) })),
+        .map((c) => ({ value: c.id, label: etichettaCapitolo(c, false), disabled: !puo(utente, area, c) }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'it', { numeric: true })),
     [capitoli, annoAttivo, utente, area],
   );
+
+  // Gli IDV si digitano: devono esistere (allineamento SIEFIN) sul capitolo del PdS
+  const idvNoti = useMemo(() => idvPerCodice(capitoli, annoAttivo), [capitoli, annoAttivo]);
+  const idvScelti = elencoIdv({ idv: valori.idv ?? null });
+  const idvInesistenti = idvScelti.filter((x) => !idvNoti.has(x));
+  const idvAltroCapitolo = idvScelti.filter((x) => idvNoti.has(x) && valori.capitolo_id != null && idvNoti.get(x)!.capitolo.id !== valori.capitolo_id);
+  const erroreIdv =
+    [
+      idvInesistenti.length ? `IDV non presente nell'esercizio ${annoAttivo}: ${idvInesistenti.join(', ')}. Eseguire l'allineamento SIEFIN oppure lasciare il PdS senza IDV.` : null,
+      ...idvAltroCapitolo.map((x) => `L'IDV ${x} appartiene al capitolo ${etichettaCapitolo(idvNoti.get(x)!.capitolo, false)}.`),
+    ]
+      .filter(Boolean)
+      .join(' ') || null;
+  const descrizioneIdv = idvScelti
+    .filter((x) => idvNoti.has(x))
+    .map((x) => `${x}: ${idvNoti.get(x)!.fondo.voce || '—'} (${formattaEuro(idvNoti.get(x)!.fondo.assegnato)})`)
+    .join(' · ');
+
+  const impostaIdv = (codici: string[]) => {
+    imposta('idv', idvDaElenco(codici));
+    // il primo IDV riconosciuto determina il capitolo, se non è ancora stato scelto
+    const noto = codici.map((x) => idvNoti.get(x.trim())).find(Boolean);
+    if (noto && !valori.capitolo_id && puo(utente, area, noto.capitolo)) imposta('capitolo_id', noto.capitolo.id);
+  };
 
   const opzioniAccordi = useMemo(
     () => [...accordi].sort((a, b) => a.numero.localeCompare(b.numero, 'it', { numeric: true })).map((a) => ({ value: a.id, label: `${a.numero} – ${a.oggetto}` })),
@@ -149,9 +174,10 @@ export function CampiIdentificativiPds({
       <TextInput label="Ordinativo" value={valori.ordinativo ?? ''} onChange={(e) => imposta('ordinativo', e.currentTarget.value || null)} maxLength={100} />
       <TagsInput
         label="IDV"
-        description="Un PdS può essere collegato a più IDV: premere Invio dopo ogni codice"
-        value={elencoIdv({ idv: valori.idv ?? null })}
-        onChange={(x) => imposta('idv', idvDaElenco(x))}
+        description={descrizioneIdv || 'Uno o più IDV del capitolo: premere Invio dopo ogni codice. Senza fondi assegnati si lascia vuoto'}
+        error={erroreIdv}
+        value={idvScelti}
+        onChange={impostaIdv}
         clearable
         comboboxProps={{ withinPortal: true }}
       />

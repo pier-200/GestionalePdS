@@ -12,14 +12,13 @@ Ogni schermata lavora su **un singolo esercizio finanziario**, scelto dalla tend
 | Archivio | Dove stanno i dati | Quando usarlo |
 |---|---|---|
 | `github` | repository GitHub **privato**, con accessi protetti da un portachiavi cifrato | la rete dell'ufficio consente solo GitHub |
-| `supabase` | database PostgreSQL gestito (piano gratuito) con permessi applicati dal server | Supabase è raggiungibile dalla rete dell'ufficio (sicurezza più robusta) |
-| `demo` | solo nel browser, con dati di esempio | per provare l'applicazione |
+| `demo` | solo nel browser, con dati di esempio | prove e test automatici |
 
 La pagina **Diagnostica connessione** (`…/#/diagnostica`, disponibile anche senza accesso) verifica dal computer di lavoro quali servizi sono raggiungibili e suggerisce l'archivio da usare.
 
 ## Documentazione
 
-- [Pubblicazione passo passo](docs/PUBBLICAZIONE.md) – GitHub Pages, archivio GitHub o Supabase, manutenzione e recupero accessi
+- [Pubblicazione passo passo](docs/PUBBLICAZIONE.md) – GitHub Pages, archivio GitHub, manutenzione e recupero accessi
 - [Architettura e scelte tecniche](docs/ARCHITETTURA.md) – valutazione dello stack, modello dati, regole di calcolo, sicurezza
 - [Manuale utente](docs/MANUALE-UTENTE.md)
 
@@ -30,7 +29,7 @@ La pagina **Diagnostica connessione** (`…/#/diagnostica`, disponibile anche se
 | 3 – Utenti e permessi | amministratore; permessi per area (capitoli, creazione/eliminazione PdS, dati PdS, pagamenti e saldo, allegati) e per ambito di capitoli; lettura sempre consentita agli utenti attivi. **Utenti e permessi**, **Registro modifiche**, **Storico modifiche** del singolo PdS e **PdS eliminati** sono visibili solo all'amministratore |
 | 3bis – Accordi quadro | capienza contrattuale di ogni AQ, **atti di adesione a quantità indeterminata** (impegnano la capienza, non i capitoli) e **a quantità determinata** (i PdS collegati direttamente all'AQ); situazione di ordinato, impegnato e residuo ordinabile per ogni AQ e per ogni atto |
 | 4 – Capitoli di spesa | per esercizio finanziario, con totale finanziato; copia dei capitoli da un esercizio all'altro; l'amministratore può autorizzare il superamento del finanziato motivandolo (l'avviso rosso non viene più mostrato) |
-| 5 – PdS | tutti i campi richiesti (ditta, ordinativo, **più IDV** per PdS), tempi a durata (giorni/mesi dalla stipula) o a data fissa, pagamenti multipli, conferma e annullamento del saldo con calcolo dell'economia, note, allegati (collegamenti e file), stato calcolato (in preparazione, inviato, stipulato, scaduto, saldato), storico modifiche. L'eliminazione è **logica**: il PdS finisce tra i «PdS eliminati», che solo l'amministratore vede, ripristina o elimina definitivamente |
+| 5 – PdS | tutti i campi richiesti (ditta, ordinativo, **più IDV** per PdS, verificati sugli IDV del capitolo allineati dal SIEFIN), tempi a durata (giorni/mesi dalla stipula) o a data fissa, pagamenti multipli, conferma e annullamento del saldo con calcolo dell'economia, note, allegati (collegamenti e file), stato calcolato (in preparazione, inviato, stipulato, scaduto, saldato), storico modifiche. L'eliminazione è **logica**: il PdS finisce tra i «PdS eliminati», che solo l'amministratore vede, ripristina o elimina definitivamente |
 | 6 – Sintesi finanziaria | per capitolo e complessiva: finanziato, impegnato (Trasmesso) e impegnato (Stipulato) con gli importi non ancora stipulati tra parentesi, pagato, disponibile da impegnare (finanziato − stipulato + economie), residuo da pagare; percentuali, grafico a barre, avviso di superamento del finanziato |
 | 7 – Scadenze | evidenza gialla/rossa negli elenchi, pagina dedicata con soglia in giorni regolabile |
 | 8 – Usabilità | filtri (capitolo, stato, DEC, avvisi) sull'esercizio scelto, ricerca testuale (numero, ditta, ordinativo, IDV, accordo quadro, protocolli), ordinamento colonne, esportazione Excel e CSV da PdS, capitoli, sintesi e accordi quadro, con **grafici nativi** dell'andamento finanziario nei file Excel |
@@ -45,8 +44,8 @@ Requisiti: Node.js 22 o successivo.
 npm install
 npm run dev          # applicazione su http://localhost:5173 (modalità dimostrativa)
 npm run typecheck    # controllo dei tipi TypeScript
-npm test             # test unitari, dei backend e dello schema SQL (PostgreSQL reale via PGlite)
-npm run e2e          # test end-to-end nel browser Microsoft Edge (demo, GitHub e Supabase emulati)
+npm test             # test unitari di dominio, motore e backend GitHub (emulato)
+npm run e2e          # test end-to-end nel browser Microsoft Edge (demo e GitHub emulato)
 npm run build        # compilazione in dist/
 npm run pubblica     # compila e aggiorna il sito su GitHub Pages (ramo gh-pages)
 ```
@@ -56,10 +55,9 @@ Struttura principale:
 ```
 src/domain/        regole di dominio: tipi, calcoli, stato, sintesi, permessi, validazioni, registro
 src/motore/        applicazione dei comandi (usata dai backend demo e GitHub)
-src/backend/       archivi dati: demo, github (API Git + portachiavi cifrato), supabase
+src/backend/       archivi dati: demo, github (API Git + portachiavi cifrato)
 src/ui/            interfaccia (React + Mantine)
 src/esportazione/  export Excel e CSV, con i grafici nativi del pacchetto .xlsx
-supabase/          schema SQL (RLS, trigger, funzioni) ed Edge Function "gestione-utenti"
-.github/workflows-da-attivare/  pubblicazione su Pages, installazione Supabase, keep-alive (vedi LEGGIMI.md)
-tests/             test unitari, SQL ed end-to-end, emulatori di GitHub e Supabase
+.github/workflows-da-attivare/  pubblicazione su Pages (vedi LEGGIMI.md)
+tests/             test unitari ed end-to-end, emulatore di GitHub
 ```

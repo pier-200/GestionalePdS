@@ -11,7 +11,7 @@ import { rapportoElencoPds } from '../../esportazione/rapporti';
 import { useDerivati } from '../../stato/derivati';
 import { useApp } from '../../stato/store';
 import { MenuEsporta } from '../componenti/MenuEsporta';
-import { BadgeStato, DataConScadenza, Importo, IntestazionePagina, StatoVuoto } from '../componenti/base';
+import { BadgeStato, DataConScadenza, Importo, IntestazionePagina, NomeCapitolo, StatoVuoto } from '../componenti/base';
 import { useValoriDec } from '../componenti/CampiPds';
 import { ModaleNuovoPds } from '../componenti/ModaleNuovoPds';
 import { SelettoreEsercizio, useEsercizioSelezionato } from '../componenti/SelettoreEsercizio';
@@ -58,13 +58,9 @@ export function colonneElencoPds(): Colonna<PdsVista>[] {
     {
       chiave: 'capitolo',
       titolo: 'Capitolo',
-      ordina: (v) => v.capitolo?.codice ?? '',
-      render: (v) => (
-        <Text fz="sm" fw={500} style={{ whiteSpace: 'nowrap' }}>
-          {v.capitolo ? etichettaCapitolo(v.capitolo, false) : '—'}
-        </Text>
-      ),
-      larghezza: 110,
+      ordina: (v) => (v.capitolo ? etichettaCapitolo(v.capitolo, false) : ''),
+      render: (v) => (v.capitolo ? <NomeCapitolo capitolo={v.capitolo} /> : <Text fz="sm">—</Text>),
+      larghezza: 150,
     },
     { chiave: 'ditta', titolo: 'Ditta', ordina: (v) => v.pds.ditta, render: (v) => <Text fz="sm">{v.pds.ditta ?? '—'}</Text> },
     { chiave: 'dec', titolo: 'Collaboratore/DEC', ordina: (v) => v.pds.dec, render: (v) => <Text fz="sm">{v.pds.dec ?? '—'}</Text> },
@@ -120,7 +116,7 @@ export function SchedaPds({ v }: { v: PdsVista }) {
         <BadgeStato stato={v.stato} />
       </Group>
       <Text fz="xs" c="dimmed">
-        {[v.capitolo ? `Cap. ${v.capitolo.codice}` : 'Capitolo non trovato', v.pds.ditta, v.pds.dec].filter(Boolean).join(' · ')}
+        {[v.capitolo ? `Cap. ${etichettaCapitolo(v.capitolo, false)}` : 'Capitolo non trovato', v.pds.ditta, v.pds.dec].filter(Boolean).join(' · ')}
       </Text>
       <Group gap="lg" mt={4} align="flex-start">
         <div>
@@ -204,15 +200,15 @@ export function ElencoPds() {
     () =>
       capitoli
         .filter((c) => c.esercizio === anno)
-        .sort((a, b) => a.codice.localeCompare(b.codice, 'it', { numeric: true }))
-        .map((c) => ({ value: c.codice, label: c.codice })),
+        .map((c) => ({ value: c.id, label: etichettaCapitolo(c, false) }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'it', { numeric: true })),
     [capitoli, anno],
   );
 
   const filtrate = useMemo(() => {
     const testo = normalizzaRicerca(q);
     return dellEsercizio.filter((v) => {
-      if (capitolo && v.capitolo?.codice !== capitolo) return false;
+      if (capitolo && v.capitolo?.id !== capitolo) return false;
       if (stati.length && !stati.includes(v.stato)) return false;
       if (dec && (v.pds.dec ?? '').trim() !== dec) return false;
       if (avviso === 'scaduti' && v.avviso !== 'scaduto') return false;
@@ -231,6 +227,7 @@ export function ElencoPds() {
           v.pds.protocollo_stipula,
           v.pds.dec,
           v.capitolo?.codice,
+          v.capitolo?.decreto,
         ];
         if (!campi.some((c) => c && normalizzaRicerca(c).includes(testo))) return false;
       }
@@ -292,7 +289,7 @@ export function ElencoPds() {
             clearable
             searchable
             w={{ base: '100%', sm: 190 }}
-            comboboxProps={{ width: 260, position: 'bottom-start' }}
+            comboboxProps={{ width: 360, position: 'bottom-start' }}
           />
           <MultiSelect
             aria-label="Stato"

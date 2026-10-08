@@ -1,4 +1,4 @@
-import { confrontoNaturale, type PdsVista } from './calcoli';
+import { confrontoNaturale, etichettaCapitolo, finanziatoCapitolo, type PdsVista } from './calcoli';
 import { rapporto } from './importi';
 import { invioAvvenuto, stipulaAvvenuta } from './stato';
 import type { Capitolo, Centesimi } from './tipi';
@@ -143,10 +143,10 @@ export function calcolaSintesi(capitoli: Capitolo[], viste: PdsVista[]): Sintesi
     else perCapitolo.set(v.pds.capitolo_id, [v]);
   }
   const righe: RigaSintesi[] = [...capitoli]
-    .sort((a, b) => b.esercizio - a.esercizio || confrontoNaturale(a.codice, b.codice))
+    .sort((a, b) => b.esercizio - a.esercizio || confrontoNaturale(etichettaCapitolo(a, false), etichettaCapitolo(b, false)))
     .map((capitolo) => {
       const pds = perCapitolo.get(capitolo.id) ?? [];
-      return { capitolo, pds, ...valoriCapitolo(capitolo.finanziato, pds) };
+      return { capitolo, pds, ...valoriCapitolo(finanziatoCapitolo(capitolo), pds) };
     });
 
   const somma = (campo: keyof ValoriSintesi) => righe.reduce((t, r) => t + (r[campo] as number), 0);

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { unzipSync } from 'fflate';
 import { readFileSync } from 'node:fs';
-import { PASSWORD_DEMO, accedi, notifica, scegli, vaiA } from './aiuti';
+import { PASSWORD_DEMO, accedi, configura, notifica, scegli, vaiA } from './aiuti';
 
 function scheda(page: Page, titolo: string) {
   return page.locator('.mantine-Card-root').filter({ has: page.getByRole('heading', { name: titolo, exact: true }) });
@@ -13,6 +13,9 @@ async function compilaData(campo: ReturnType<Page['getByLabel']>, valore: string
 }
 
 test.describe('modalità dimostrativa', () => {
+  // l'app pubblicata usa l'archivio GitHub: qui si forza la modalità dimostrativa
+  test.beforeEach(({ page }) => configura(page, { backend: { tipo: 'demo' } }));
+
   test('ciclo di vita completo di un PdS con sintesi ed esportazione', async ({ page }) => {
     await page.goto('/');
     await accedi(page, 'admin', PASSWORD_DEMO);
@@ -22,7 +25,7 @@ test.describe('modalità dimostrativa', () => {
     await page.getByRole('button', { name: 'Nuovo capitolo' }).click();
     const modaleCapitolo = page.getByRole('dialog');
     await modaleCapitolo.getByLabel('Codice capitolo').fill('9001');
-    await modaleCapitolo.getByLabel('Totale finanziato').fill('10000');
+    await modaleCapitolo.getByLabel('Fondi aggiunti manualmente').fill('10000');
     await modaleCapitolo.getByRole('button', { name: 'Salva' }).click();
     await notifica(page, 'Capitolo creato');
     await expect(page.getByRole('cell', { name: '9001', exact: true })).toBeVisible();
@@ -233,5 +236,58 @@ test.describe('modalità dimostrativa', () => {
     await expect(page.getByText('Superamento').first()).toBeVisible();
     // il superamento autorizzato dall'amministratore non compare tra quelli da segnalare
     await expect(page.getByText('Autorizzato').first()).toBeVisible();
+  });
+  test('allineamento SIEFIN: capitoli per decreto, riallineamento e IDV dei PdS', async ({ page }) => {
+    const riga = (celle: string[], tag: string) => `<tr>${celle.map((c) => `<${tag}>${c}</${tag}>`).join('')}</tr>`;
+    const exportSiefin = (assegnato: string) => ({
+      name: 'Export_07_08_2026 10_19_43.xls',
+      mimeType: 'application/vnd.ms-excel',
+      buffer: Buffer.from(
+        `<form><table>${riga(['IDV', 'VOCE SPESA', 'CPT', 'ART', 'PTF', 'PC3', 'ASSEGNATO', 'CODATTIVITA', 'DESCATTIVITA', 'DECRETO'], 'th')}${riga(
+          ['7770001', 'Esigenze varie', '1189', '7', '61', 'Manutenzione mezzi', assegnato, 'MPR', 'Forniture', 'Fuori Area 2026 - Anticipazione'],
+          'td',
+        )}${riga(['7770002', 'Apparati elettronici', '1189', '7', '61', 'Manutenzione mezzi', '10000,00', 'SPT', 'Supporto', 'Fuori Area 2025 - Completamento'], 'td')}</table></form>`,
+      ),
+    });
+
+    await page.goto('/');
+    await accedi(page, 'admin', PASSWORD_DEMO);
+    await vaiA(page, 'Capitoli di spesa');
+    await page.locator('input[type="file"]').setInputFiles(exportSiefin('45000,00'));
+    const anteprima = page.getByRole('dialog');
+    await expect(anteprima.getByText(/2 IDV su 2 capitoli/)).toBeVisible();
+    await anteprima.getByRole('button', { name: /^Allinea/ }).click();
+    await notifica(page, /2 capitoli aggiornati/);
+    // stesso codice, decreti diversi: due capitoli distinti
+    const anticipazione = page.getByRole('row').filter({ hasText: 'Fuori Area 2026 - Anticipazione' });
+    await expect(anticipazione).toContainText('45.000,00');
+    await expect(page.getByRole('row').filter({ hasText: 'Fuori Area 2025 - Completamento' })).toContainText('10.000,00');
+
+    // un nuovo export allinea gli importi, non li somma
+    await page.locator('input[type="file"]').setInputFiles(exportSiefin('40000,00'));
+    await page.getByRole('dialog').getByRole('button', { name: /^Allinea/ }).click();
+    await notifica(page, /1 capitoli aggiornati/);
+    await expect(anticipazione).toContainText('40.000,00');
+    await anticipazione.getByRole('button', { name: /Mostra gli IDV/ }).click();
+    await expect(page.getByRole('dialog').getByText('Esigenze varie')).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    // l'IDV digitato deve esistere e determina il capitolo
+    await vaiA(page, 'Progetti di spesa');
+    await page.getByRole('button', { name: 'Nuovo PdS' }).click();
+    const modalePds = page.getByRole('dialog');
+    await modalePds.getByLabel('Numero del progetto di spesa').fill('901');
+    const idv = modalePds.getByLabel('IDV', { exact: true });
+    await idv.fill('123');
+    await idv.press('Enter');
+    await expect(modalePds.getByText(/IDV non presente nell'esercizio 2026: 123/)).toBeVisible();
+    await idv.press('Backspace');
+    await idv.fill('7770001');
+    await idv.press('Enter');
+    await expect(modalePds.getByRole('combobox', { name: 'Capitolo di spesa' })).toHaveValue('1189/7/61 Fuori Area 2026 - Anticipazione');
+    await modalePds.getByRole('button', { name: 'Crea PdS' }).click();
+    await expect(page.getByRole('heading', { name: /PdS 901\/2026/ })).toBeVisible();
+    await vaiA(page, 'Progetti di spesa');
+    await expect(page.getByRole('row').filter({ hasText: '901/2026' })).toContainText('Fuori Area 2026 - Anticipazione');
   });
 });

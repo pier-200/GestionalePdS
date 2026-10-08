@@ -19,15 +19,6 @@ export type ConfigBackend =
       branch?: string;
       /** URL GitHub Pages del keyring (facoltativo, usato come fonte aggiuntiva). */
       urlKeyringPages?: string;
-    }
-  | {
-      tipo: 'supabase';
-      /** URL del progetto, es. https://abcdefgh.supabase.co */
-      url: string;
-      /** Chiave pubblica (anon/publishable): è pubblica per progetto, la sicurezza è data dalle policy RLS. */
-      chiavePubblica: string;
-      /** Dominio tecnico usato per trasformare il nome utente in indirizzo per Supabase Auth. */
-      dominioEmail?: string;
     };
 
 export interface ConfigApp {
@@ -71,16 +62,8 @@ export function interpretaConfig(grezza: unknown): ConfigApp {
         urlKeyringPages: typeof b.urlKeyringPages === 'string' && b.urlKeyringPages.trim() ? b.urlKeyringPages.trim() : undefined,
       };
       break;
-    case 'supabase':
-      backend = {
-        tipo: 'supabase',
-        url: stringa(b.url, 'backend.url').replace(/\/+$/, ''),
-        chiavePubblica: stringa(b.chiavePubblica, 'backend.chiavePubblica'),
-        dominioEmail: typeof b.dominioEmail === 'string' && b.dominioEmail.trim() ? b.dominioEmail.trim() : 'pds.local',
-      };
-      break;
     default:
-      throw new ErroreApp('CONFIGURAZIONE', `config.json: backend "${String(b.tipo)}" non riconosciuto (valori ammessi: demo, github, supabase).`);
+      throw new ErroreApp('CONFIGURAZIONE', `config.json: backend "${String(b.tipo)}" non riconosciuto (valori ammessi: demo, github).`);
   }
   const soglia = Number(g.sogliaScadenzaGiorni);
   return {

@@ -5,7 +5,7 @@ import { protocollo } from '../../domain/calcoli';
 import { descriviGiorni, formattaData } from '../../domain/date';
 import { formattaEuro, formattaPercentuale } from '../../domain/importi';
 import { STATI, type LivelloAvviso, type StatoPds } from '../../domain/stato';
-import type { Centesimi } from '../../domain/tipi';
+import type { Capitolo, Centesimi } from '../../domain/tipi';
 
 export function BadgeStato({ stato, ...props }: { stato: StatoPds } & BadgeProps) {
   const info = STATI[stato];
@@ -15,6 +15,22 @@ export function BadgeStato({ stato, ...props }: { stato: StatoPds } & BadgeProps
         {info.etichetta}
       </Badge>
     </Tooltip>
+  );
+}
+
+/** Capitolo con il decreto in piccolo: capitoli con lo stesso codice si distinguono dal decreto. */
+export function NomeCapitolo({ capitolo, forte = false }: { capitolo: Pick<Capitolo, 'codice' | 'decreto'>; forte?: boolean }) {
+  return (
+    <div>
+      <Text fz="sm" fw={forte ? 600 : 500} style={{ whiteSpace: 'nowrap' }}>
+        {capitolo.codice}
+      </Text>
+      {capitolo.decreto && (
+        <Text fz="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+          {capitolo.decreto}
+        </Text>
+      )}
+    </div>
   );
 }
 
