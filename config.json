@@ -1,0 +1,10 @@
+{
+  "nomeUfficio": "",
+  "sogliaScadenzaGiorni": 30,
+  "backend": {
+    "tipo": "github",
+    "owner": "pier-200",
+    "repoDati": "pds-dati",
+    "repoAccessi": "pds-accessi"
+  }
+}
